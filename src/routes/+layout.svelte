@@ -81,7 +81,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  padding-top: 5.7rem; /* ← pushes tabs down */
+  padding-top: 4.7rem; /* ← pushes tabs down */
 }
 
 
@@ -94,7 +94,7 @@
     color: inherit;
     font-size: 1.05rem;
     font-weight: 600;
-    padding: 0.75rem;
+    padding: 1rem;
     border-radius: 6px;
     cursor: pointer;
     transition: background 0.2s;
