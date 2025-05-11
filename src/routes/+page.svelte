@@ -1,156 +1,230 @@
 <script lang="ts">
-  import { invoke } from "@tauri-apps/api/core";
+  import { writable, derived } from 'svelte/store';
 
-  let name = $state("");
-  let greetMsg = $state("");
+  interface Entry {
+    id: number;
+    icon: string;
+    account: string;
+    username: string;
+  }
 
-  async function greet(event: Event) {
-    event.preventDefault();
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    greetMsg = await invoke("greet", { name });
+  const initial: Entry[] = [
+    { id: 1, icon: '/icons/google.svg',   account: 'Google',   username: 'user@gmail.com'    },
+    { id: 2, icon: '/icons/facebook.svg', account: 'Facebook', username: 'user@fb.com'      },
+    { id: 3, icon: '/icons/dropbox.svg',  account: 'Dropbox',  username: 'user@dropbox.com' },
+    { id: 4, icon: '/icons/twitter.svg',  account: 'Twitter',  username: 'user@twitter.com' }
+  ];
+
+  const search = writable('');
+  const entries = writable<Entry[]>(initial);
+
+  const filtered = derived(
+    [entries, search],
+    ([$entries, $search]) =>
+      $entries.filter(e =>
+        e.account.toLowerCase().includes($search.toLowerCase())
+      )
+  );
+
+  function reveal(id: number) {
+    console.log('reveal', id);
   }
 </script>
 
-<main class="container">
-  <h1>Welcome to Tauri + Svelte</h1>
-
-  <div class="row">
-    <a href="https://vitejs.dev" target="_blank">
-      <img src="/vite.svg" class="logo vite" alt="Vite Logo" />
-    </a>
-    <a href="https://tauri.app" target="_blank">
-      <img src="/tauri.svg" class="logo tauri" alt="Tauri Logo" />
-    </a>
-    <a href="https://kit.svelte.dev" target="_blank">
-      <img src="/svelte.svg" class="logo svelte-kit" alt="SvelteKit Logo" />
-    </a>
+<div class="page-wrapper">
+  <!-- SEARCH BAR -->
+  <div class="toolbar">
+    <div class="search-wrapper">
+      <svg class="search-icon" viewBox="0 0 24 24">
+        <path fill="currentColor"
+          d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0
+             16 9.5 6.5 6.5 0 1 0 9.5 16a6.471 6.471 0 0
+             0 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6
+             0C8.01 14 6 11.99 6 9.5S8.01 5 10.5 5 15 7.01 15
+             9.5 12.99 14 10.5 14z"/>
+      </svg>
+      <input
+        type="text"
+        placeholder="Search"
+        bind:value={$search}
+      />
+    </div>
   </div>
-  <p>Click on the Tauri, Vite, and SvelteKit logos to learn more.</p>
 
-  <form class="row" onsubmit={greet}>
-    <input id="greet-input" placeholder="Enter a name..." bind:value={name} />
-    <button type="submit">Greet</button>
-  </form>
-  <p>{greetMsg}</p>
-</main>
+  <!-- TABLE WITH FIXED HEADER -->
+  <div class="table-wrapper">
+    <table class="entries">
+      <thead>
+        <tr>
+          <th>Account</th>
+          <th>Username</th>
+          <th>Password</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {#each $filtered as e}
+          <tr>
+            <td class="account-cell">
+              <img src={e.icon} alt="" />
+              {e.account}
+            </td>
+            <td>{e.username}</td>
+            <td>••••••••</td>
+            <td>
+              <button class="eye-btn" on:click={() => reveal(e.id)}>
+                <svg class="eye-icon" viewBox="0 0 24 24">
+                  <path fill="currentColor"
+                    d="M12 4.5C7.305 4.5 3.164 7.56 1.5
+                       12c1.664 4.44 5.805 7.5 10.5 7.5s8.836-3.06
+                       10.5-7.5C20.836 7.56 16.695 4.5 12 4.5zm0
+                       13a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0
+                       11zm0-2a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0
+                       7z"/>
+                </svg>
+              </button>
+            </td>
+          </tr>
+        {/each}
+      </tbody>
+    </table>
+  </div>
+</div>
 
 <style>
-.logo.vite:hover {
-  filter: drop-shadow(0 0 2em #747bff);
+  :global(:root) {
+    --panel:  #141414;
+    --text:   #e0e0e0;
+    --muted:  #777;
+    --hover:  #272727;
+    --border: #444;
+  }
+
+  /* 1) Layout */
+  .page-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  /* 2) Toolbar */
+  .toolbar {
+    padding-bottom: 1rem;
+  }
+  .search-wrapper {
+    position: relative;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    width: 1.75rem;
+    height: 1.75rem;
+    transform: translateY(-50%);
+    fill: var(--muted);
+    pointer-events: none;
+  }
+  input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 3rem;
+    border: none;
+    border-radius: 8px;
+    background: var(--panel);
+    color: var(--text);
+    font-size: 1.1rem;
+    box-sizing: border-box;
+  }
+  input::placeholder {
+    color: var(--muted);
+  }
+
+  /* 3) Table wrapper: scrolls only rows */
+  .table-wrapper {
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  /* 4) Single table, fixed header */
+  .entries {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-family: inherit;
+  }
+  thead {
+    background: var(--panel);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    border-bottom: 1px solid var(--border);
+  }
+  thead th {
+    padding: 1rem 1rem 0.75rem;
+    text-align: left;
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: var(--text);
+  }
+  th:nth-child(1) { width: 35%; } /* Account */
+  th:nth-child(2) { width: 25%; } /* Username */
+  th:nth-child(3) { width: 25%; } /* Password */
+  th:nth-child(4) { width: 15%; } /* Button */
+
+  /* 5) Body rows */
+  tbody tr:hover {
+    background: var(--hover);
+  }
+tbody td {
+  padding: 1rem;
+  vertical-align: middle; /* Changed from top to middle */
 }
+  /* Adjust spacing */
+  td:first-child  { padding-right: 2rem; }
+  td:nth-child(2) { padding-right: 0.5rem; }
+  td:nth-child(4) { text-align: center; } /* Center the button column */
 
-.logo.svelte-kit:hover {
-  filter: drop-shadow(0 0 2em #ff3e00);
-}
-
-:root {
-  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: 400;
-
-  color: #0f0f0f;
-  background-color: #f6f6f6;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-text-size-adjust: 100%;
-}
-
-.container {
-  margin: 0;
-  padding-top: 10vh;
+.account-cell {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  text-align: center;
+  align-items: center; /* Or flex-start, depending on your preference */
+  gap: 1rem;
 }
-
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: 0.75s;
-}
-
-.logo.tauri:hover {
-  filter: drop-shadow(0 0 2em #24c8db);
-}
-
-.row {
-  display: flex;
-  justify-content: center;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-
-a:hover {
-  color: #535bf2;
-}
-
-h1 {
-  text-align: center;
-}
-
-input,
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  color: #0f0f0f;
-  background-color: #ffffff;
-  transition: border-color 0.25s;
-  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
-}
-
-button {
-  cursor: pointer;
-}
-
-button:hover {
-  border-color: #396cd8;
-}
-button:active {
-  border-color: #396cd8;
-  background-color: #e8e8e8;
-}
-
-input,
-button {
-  outline: none;
-}
-
-#greet-input {
-  margin-right: 5px;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    color: #f6f6f6;
-    background-color: #2f2f2f;
+  .account-cell img {
+    width: 2rem; /* Increased from 1.5rem */
+    height: 2rem; /* Increased from 1.5rem */
+    object-fit: contain;
   }
 
-  a:hover {
-    color: #24c8db;
+  /* Eye button */
+  .eye-btn {
+    background: var(--panel);
+    border: none;
+    padding: 0.25rem; /* Reduced from 0.5rem */
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .eye-btn:hover {
+    background: var(--hover);
+  }
+  .eye-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    fill: var(--text);
   }
 
-  input,
-  button {
-    color: #ffffff;
-    background-color: #0f0f0f98;
+  /* Scrollbar styles */
+  .table-wrapper::-webkit-scrollbar {
+    width: 12px;
   }
-  button:active {
-    background-color: #0f0f0f69;
+  .table-wrapper::-webkit-scrollbar-track {
+    background: #1a1a1a; /* Very dark gray, nearly black */
   }
-}
-
+  .table-wrapper::-webkit-scrollbar-thumb {
+    background: #444; /* Medium gray */
+    border-radius: 6px;
+  }
+  .table-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #666; /* Lighter gray on hover */
+  }
 </style>
