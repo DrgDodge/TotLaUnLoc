@@ -1,15 +1,5 @@
 <script lang="ts">
-<<<<<<< HEAD
   import { page } from '$app/stores';
-=======
-    import { invoke } from "@tauri-apps/api/core";
-
-  // no dynamic logic here
-
-  function testRust() {
-    invoke('greet')
-  }
->>>>>>> 8d84560 (test-backend)
 </script>
 
 <div class="app-container">
@@ -22,20 +12,9 @@
       <a class="nav-item {($page.url.pathname === '/one-time-codes' ? 'active' : '')}" href="/one-time-codes">
         <img class="icon" src="/icons/clock.svg" alt="One-Time Codes icon">
         One-Time Codes
-<<<<<<< HEAD
       </a>
       <a class="nav-item {($page.url.pathname === '/check-passwords' ? 'active' : '')}" href="/check-passwords">
         <img class="icon" src="/icons/shield.svg" alt="Check Passwords icon">
-=======
-      </button>
-      <button class="nav-item" on:click={testRust}>
-        <!-- Shield/check for Check Passwords -->
-        <svg class="icon" viewBox="0 0 24 24">
-          <path fill="currentColor"
-            d="M12 1l9 4v6c0 5-3.7 10-9 11-5.3-1-9-6-9-11V5l9-4zm-1
-               14l7-7-1.414-1.414L11 12.172l-2.586-2.586L7 11l4 4z"/>
-        </svg>
->>>>>>> 8d84560 (test-backend)
         Check Passwords
       </a>
     </nav>
