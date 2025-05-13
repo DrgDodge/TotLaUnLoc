@@ -35,14 +35,7 @@
   <!-- SEARCH BAR -->
   <div class="toolbar">
     <div class="search-wrapper">
-      <svg class="search-icon" viewBox="0 0 24 24">
-        <path fill="currentColor"
-          d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0
-             16 9.5 6.5 6.5 0 1 0 9.5 16a6.471 6.471 0 0
-             0 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6
-             0C8.01 14 6 11.99 6 9.5S8.01 5 10.5 5 15 7.01 15
-             9.5 12.99 14 10.5 14z"/>
-      </svg>
+      <img class="search-icon" src="/icons/search.svg" alt="" />
       <input
         type="text"
         placeholder="Search"
@@ -73,12 +66,7 @@
             <td>••••••••</td>
             <td>
               <button class="eye-btn" on:click={() => reveal(e.id)}>
-                <svg class="eye-icon" viewBox="0 0 24 24">
-  <path fill="white" 
-    d="M12 4.5C7.305 4.5 3.164 7.56 1.5 12c1.664 4.44 5.805 7.5 10.5 7.5s8.836-3.06 10.5-7.5C20.836 7.56 16.695 4.5 12 4.5zm0 13a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/>
-  <path fill="currentColor" 
-    d="M12 15a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/>
-</svg>
+                <img class="eye-icon" src="/icons/eye.svg" alt="Reveal password">
               </button>
             </td>
           </tr>
@@ -122,6 +110,8 @@
     transform: translateY(-50%);
     fill: var(--muted);
     pointer-events: none;
+    flex-shrink: 0;
+    filter: brightness(0) invert(1);
   }
   input {
     width: 100%;
@@ -173,20 +163,20 @@
   tbody tr:hover {
     background: var(--hover);
   }
-tbody td {
-  padding: 1rem;
-  vertical-align: middle; /* Changed from top to middle */
-}
+  tbody td {
+    padding: 1rem;
+    vertical-align: middle; /* Changed from top to middle */
+  }
   /* Adjust spacing */
   td:first-child  { padding-right: 2rem; }
   td:nth-child(2) { padding-right: 0.5rem; }
   td:nth-child(4) { text-align: center; } /* Center the button column */
 
-.account-cell {
-  display: flex;
-  align-items: center; /* Or flex-start, depending on your preference */
-  gap: 1rem;
-}
+  .account-cell {
+    display: flex;
+    align-items: center; /* Or flex-start, depending on your preference */
+    gap: 1rem;
+  }
   .account-cell img {
     width: 2rem; /* Increased from 1.5rem */
     height: 2rem; /* Increased from 1.5rem */
@@ -207,7 +197,7 @@ tbody td {
   .eye-icon {
     width: 1.5rem;
     height: 1.5rem;
-    fill: var(--text);
+    filter: brightness(0) invert(1);
   }
 
   /* Scrollbar styles */
