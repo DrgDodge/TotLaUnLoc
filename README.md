@@ -160,5 +160,3 @@ pnpm tauri dev
 * Licență: **MIT**.
 
 ---
-
-*Documentație generată pentru concursul Info-Educația 2025.*
