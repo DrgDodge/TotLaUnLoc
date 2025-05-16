@@ -7,6 +7,7 @@ use totp::{add_account, delete_account, get_accounts_with_codes, AppState};
 use std::sync::Mutex;
 
 fn main() {
+        totlaunloc_lib::run();
     tauri::Builder::default()
         .manage(AppState {
             accounts: Mutex::new(vec![]),
