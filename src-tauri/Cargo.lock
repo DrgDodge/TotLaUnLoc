@@ -247,6 +247,12 @@ dependencies = [
 
 [[package]]
 name = "base32"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "23ce669cd6c8588f79e15cf450314f9638f967fc5770ff1c7c1deb0925ea7cfa"
+
+[[package]]
+name = "base32"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "022dfe9eb35f19ebbcb51e0b40a5ab759f46ad60cadf7297e0bd085afb50e076"
@@ -4040,6 +4046,7 @@ checksum = "bfb942dfe1d8e29a7ee7fcbde5bd2b9a25fb89aa70caea2eba3bee836ff41076"
 name = "totlaunloc"
 version = "0.1.0"
 dependencies = [
+ "base32 0.4.0",
  "chrono",
  "humantime",
  "rusqlite",
@@ -4049,6 +4056,7 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-opener",
  "totp-rs",
+ "url",
 ]
 
 [[package]]
@@ -4057,7 +4065,7 @@ version = "5.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f124352108f58ef88299e909f6e9470f1cdc8d2a1397963901b4a6366206bf72"
 dependencies = [
- "base32",
+ "base32 0.5.1",
  "constant_time_eq",
  "hmac",
  "sha1",
