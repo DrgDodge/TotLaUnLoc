@@ -2,6 +2,7 @@
   import { writable, derived } from 'svelte/store';
   import { onMount } from 'svelte';
   import { invoke } from '@tauri-apps/api/core';
+  import { fade, slide } from 'svelte/transition';
 
   interface Entry {
     id: number;
@@ -13,15 +14,12 @@
 
   // Function to normalize account name into a domain
   function getDomain(account: string): string {
-    // Convert account to lowercase and remove spaces
     const normalized = account.toLowerCase().replace(/\s+/g, '');
-    // Try to parse as a URL if it looks like one
     try {
       const url = normalized.startsWith('http') ? normalized : `https://${normalized}`;
       const { hostname } = new URL(url);
       return hostname.replace(/^www\./, '');
     } catch (e) {
-      // If not a valid URL, assume it's a domain-like string (e.g., "filelistt.io")
       return normalized;
     }
   }
@@ -29,6 +27,8 @@
   const entries = writable<Entry[]>([]);
   const search = writable('');
   let remaining = 30;
+  let showInput = false;
+  let otpauthInput = '';
 
   const filtered = derived(
     [entries, search],
@@ -41,14 +41,10 @@
   async function fetchCodes() {
     try {
       const accounts: Entry[] = await invoke('get_accounts_with_codes');
-      // Process accounts to add dynamic favicon URLs
       const processedAccounts = accounts.map(account => {
         const domain = getDomain(account.account);
         const icon = `https://${domain}/favicon.ico`;
-        return {
-          ...account,
-          icon,
-        };
+        return { ...account, icon };
       });
       entries.set(processedAccounts);
       const now = Math.floor(Date.now() / 1000);
@@ -59,21 +55,27 @@
   }
 
   async function addAccount() {
-    const otpauth = prompt('Enter otpauth URL (e.g., otpauth://totp/user?secret=XXX&issuer=Service):');
-    if (otpauth) {
+    if (otpauthInput) {
       try {
-        await invoke('add_account', { otpauth });
-        await fetchCodes(); // Refresh codes after adding
+        await invoke('add_account', { otpauth: otpauthInput });
+        otpauthInput = '';
+        showInput = false;
+        await fetchCodes();
       } catch (error) {
         alert('Failed to add account: ' + error);
       }
     }
   }
 
+  function cancelAdd() {
+    otpauthInput = '';
+    showInput = false;
+  }
+
   async function deleteAccount(id: number) {
     try {
       await invoke('delete_account', { id });
-      await fetchCodes(); // Refresh codes after deletion
+      await fetchCodes();
     } catch (error) {
       alert('Failed to delete account: ' + error);
     }
@@ -102,9 +104,26 @@
         bind:value={$search}
       />
     </div>
-    <button class="add-button" on:click={addAccount}>
-      <img src="/icons/add.svg" alt="Add Account" />
-    </button>
+    {#if showInput}
+      <div class="input-wrapper" transition:slide={{ duration: 300 }}>
+        <input
+          type="text"
+          placeholder="Enter otpauth URL (e.g., otpauth://totp/user?secret=XXX&issuer=Service)"
+          bind:value={otpauthInput}
+          on:keydown={(e) => e.key === 'Enter' && addAccount()}
+        />
+        <button class="submit-btn" on:click={addAccount}>
+          <img src="/icons/check.svg" alt="Submit" />
+        </button>
+        <button class="cancel-btn" on:click={cancelAdd}>
+          <img src="/icons/x.svg" alt="Cancel" />
+        </button>
+      </div>
+    {:else}
+      <button class="add-button" on:click={() => (showInput = true)}>
+        <img src="/icons/add.svg" alt="Add Account" />
+      </button>
+    {/if}
     <div class="countdown-wrapper">
       <svg width="40" height="40" viewBox="0 0 40 40">
         <circle cx="20" cy="20" r="16" stroke="var(--muted)" stroke-width="4" fill="none" />
@@ -164,11 +183,13 @@
     align-items: center;
     gap: 1rem;
     padding-bottom: 1rem;
+    flex-wrap: nowrap;
   }
 
   .search-wrapper {
     flex: 1;
     position: relative;
+    min-width: 200px;
   }
 
   .search-icon {
@@ -195,6 +216,47 @@
 
   input::placeholder {
     color: var(--muted);
+  }
+
+  .input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 300px;
+  }
+
+  .input-wrapper input {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    background: var(--panel);
+    color: var(--text);
+    font-size: 1.1rem;
+  }
+
+  .submit-btn, .cancel-btn {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+  }
+
+  .submit-btn:hover, .cancel-btn:hover {
+    background: var(--hover);
+  }
+
+  .submit-btn img, .cancel-btn img {
+    width: 24px;
+    height: 24px;
+    filter: brightness(0) invert(1);
   }
 
   .add-button {
@@ -224,6 +286,7 @@
   .countdown-wrapper {
     width: 40px;
     height: 40px;
+    flex-shrink: 0;
   }
 
   .table-wrapper {
@@ -254,10 +317,10 @@
     color: var(--text);
   }
 
-  th:nth-child(1) { width: 35%; } /* Account */
-  th:nth-child(2) { width: 25%; } /* Username */
-  th:nth-child(3) { width: 25%; } /* Code */
-  th:nth-child(4) { width: 15%; } /* Delete button */
+  th:nth-child(1) { width: 35%; }
+  th:nth-child(2) { width: 25%; }
+  th:nth-child(3) { width: 25%; }
+  th:nth-child(4) { width: 15%; }
 
   tbody tr:hover {
     background: var(--hover);
