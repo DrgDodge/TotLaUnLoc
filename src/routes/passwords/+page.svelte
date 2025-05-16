@@ -1,22 +1,38 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { writable, derived } from 'svelte/store';
+  import { invoke } from '@tauri-apps/api/tauri';
 
   interface Entry {
     id: number;
     icon: string;
     account: string;
     username: string;
+    date_created: string; // Adjusted to string for JSON compatibility
+    date_modified: string; // Adjusted to string for JSON compatibility
   }
 
-  const initial: Entry[] = [
-    { id: 1, icon: '/icons/google.svg',   account: 'Google',   username: 'user@gmail.com'    },
-    { id: 2, icon: '/icons/facebook.svg', account: 'Facebook', username: 'user@fb.com'      },
-    { id: 3, icon: '/icons/dropbox.svg',  account: 'Dropbox',  username: 'user@dropbox.com' },
-    { id: 4, icon: '/icons/twitter.svg',  account: 'Twitter',  username: 'user@twitter.com' }
-  ];
+  // Mapping of domains to account names and icons
+  const websiteIcons: { [key: string]: { account: string; icon: string } } = {
+    'google.com': { account: 'Google', icon: '/icons/google.svg' },
+    'facebook.com': { account: 'Facebook', icon: '/icons/facebook.svg' },
+    'dropbox.com': { account: 'Dropbox', icon: '/icons/dropbox.svg' },
+    'twitter.com': { account: 'Twitter', icon: '/icons/twitter.svg' },
+    // Add more websites as needed
+  };
+
+  // Function to extract domain from URL
+  function getDomain(url: string): string {
+    try {
+      const { hostname } = new URL(url);
+      return hostname.replace(/^www\./, '');
+    } catch (e) {
+      return '';
+    }
+  }
 
   const search = writable('');
-  const entries = writable<Entry[]>(initial);
+  const entries = writable<Entry[]>([]);
 
   const filtered = derived(
     [entries, search],
@@ -26,8 +42,32 @@
       )
   );
 
+  // Fetch data from Rust backend on mount
+  onMount(async () => {
+    try {
+      const jsonData = await invoke('greet');
+      const rawPasswords = JSON.parse(jsonData);
+      const entriesData = rawPasswords.map((p: any, index: number) => {
+        const domain = getDomain(p.url);
+        const websiteInfo = websiteIcons[domain] || { account: domain || 'Unknown', icon: '/icons/default.svg' };
+        return {
+          id: index + 1,
+          icon: websiteInfo.icon,
+          account: websiteInfo.account,
+          username: p.username,
+          date_created: p.date_created,
+          date_modified: p.date_modified,
+        };
+      });
+      entries.set(entriesData);
+    } catch (error) {
+      console.error('Failed to fetch password data:', error);
+    }
+  });
+
   function reveal(id: number) {
     console.log('reveal', id);
+    // Future implementation: Fetch and display the actual password
   }
 </script>
 
@@ -51,6 +91,8 @@
         <tr>
           <th>Account</th>
           <th>Username</th>
+          <th>Date Created</th>
+          <th>Date Modified</th>
           <th>Password</th>
           <th></th>
         </tr>
@@ -63,10 +105,12 @@
               {e.account}
             </td>
             <td>{e.username}</td>
+            <td>{new Date(e.date_created).toLocaleString()}</td>
+            <td>{new Date(e.date_modified).toLocaleString()}</td>
             <td>••••••••</td>
             <td>
               <button class="eye-btn" on:click={() => reveal(e.id)}>
-                <img class="eye-icon" src="/icons/eye.svg" alt="Reveal password">
+                <img class="eye-icon" src="/icons/eye.svg" alt="Reveal password" />
               </button>
             </td>
           </tr>
@@ -154,10 +198,12 @@
     font-size: 1.15rem;
     color: var(--text);
   }
-  th:nth-child(1) { width: 35%; } /* Account */
-  th:nth-child(2) { width: 25%; } /* Username */
-  th:nth-child(3) { width: 25%; } /* Password */
-  th:nth-child(4) { width: 15%; } /* Button */
+  th:nth-child(1) { width: 20%; } /* Account */
+  th:nth-child(2) { width: 20%; } /* Username */
+  th:nth-child(3) { width: 20%; } /* Date Created */
+  th:nth-child(4) { width: 20%; } /* Date Modified */
+  th:nth-child(5) { width: 10%; } /* Password */
+  th:nth-child(6) { width: 10%; } /* Button */
 
   /* 5) Body rows */
   tbody tr:hover {
@@ -165,21 +211,20 @@
   }
   tbody td {
     padding: 1rem;
-    vertical-align: middle; /* Changed from top to middle */
+    vertical-align: middle;
   }
-  /* Adjust spacing */
   td:first-child  { padding-right: 2rem; }
   td:nth-child(2) { padding-right: 0.5rem; }
-  td:nth-child(4) { text-align: center; } /* Center the button column */
+  td:nth-child(6) { text-align: center; } /* Center the button column */
 
   .account-cell {
     display: flex;
-    align-items: center; /* Or flex-start, depending on your preference */
+    align-items: center;
     gap: 1rem;
   }
   .account-cell img {
-    width: 2rem; /* Increased from 1.5rem */
-    height: 2rem; /* Increased from 1.5rem */
+    width: 2rem;
+    height: 2rem;
     object-fit: contain;
   }
 
@@ -187,7 +232,7 @@
   .eye-btn {
     background: var(--panel);
     border: none;
-    padding: 0.25rem; /* Reduced from 0.5rem */
+    padding: 0.25rem;
     border-radius: 6px;
     cursor: pointer;
   }
@@ -205,13 +250,13 @@
     width: 12px;
   }
   .table-wrapper::-webkit-scrollbar-track {
-    background: #1a1a1a; /* Very dark gray, nearly black */
+    background: #1a1a1a;
   }
   .table-wrapper::-webkit-scrollbar-thumb {
-    background: #444; /* Medium gray */
+    background: #444;
     border-radius: 6px;
   }
   .table-wrapper::-webkit-scrollbar-thumb:hover {
-    background: #666; /* Lighter gray on hover */
+    background: #666;
   }
 </style>
