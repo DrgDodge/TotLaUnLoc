@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { writable, derived } from 'svelte/store';
-  import { invoke } from '@tauri-apps/api/tauri';
+  import { invoke } from '@tauri-apps/api/core';
 
   interface Entry {
     id: number;
@@ -45,7 +45,7 @@
   // Fetch data from Rust backend on mount
   onMount(async () => {
     try {
-      const jsonData = await invoke('greet');
+      const jsonData: string = await invoke('greet');
       const rawPasswords = JSON.parse(jsonData);
       const entriesData = rawPasswords.map((p: any, index: number) => {
         const domain = getDomain(p.url);
