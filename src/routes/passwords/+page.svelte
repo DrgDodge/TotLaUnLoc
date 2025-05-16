@@ -12,25 +12,27 @@
     date_modified: string;
   }
 
-  // Expanded mapping of domains to account names and icons
-  const websiteIcons: { [key: string]: { account: string; icon: string } } = {
-    'google.com': { account: 'Google', icon: '/icons/google.svg' },
-    'facebook.com': { account: 'Facebook', icon: '/icons/facebook.svg' },
-    'dropbox.com': { account: 'Dropbox', icon: '/icons/dropbox.svg' },
-    'twitter.com': { account: 'Twitter', icon: '/icons/twitter.svg' },
-    'linkedin.com': { account: 'LinkedIn', icon: '/icons/linkedin.svg' },
-    'github.com': { account: 'GitHub', icon: '/icons/github.svg' },
-    'microsoft.com': { account: 'Microsoft', icon: '/icons/microsoft.svg' },
-    'amazon.com': { account: 'Amazon', icon: '/icons/amazon.svg' },
+  // Domain to account name mapping
+  const websiteAccounts: { [key: string]: string } = {
+    'google.com': 'Google',
+    'facebook.com': 'Facebook',
+    'dropbox.com': 'Dropbox',
+    'twitter.com': 'Twitter',
+    'linkedin.com': 'LinkedIn',
+    'github.com': 'GitHub',
+    'microsoft.com': 'Microsoft',
+    'amazon.com': 'Amazon',
   };
 
-  // Function to extract domain from URL with subdomain handling
+  // Function to extract domain from URL
   function getDomain(url: string): string {
     try {
       const { hostname } = new URL(url);
-      const parts = hostname.replace(/^www\./, '').split('.');
-      const domain = parts.slice(-2).join('.');
-      return domain;
+      return hostname
+        .replace(/^www\./, '')
+        .split('.')
+        .slice(-2)
+        .join('.');
     } catch (e) {
       return '';
     }
@@ -61,60 +63,61 @@
     }
   );
 
-  // Fetch data from Rust backend on mount
+  // Fetch and process data
   onMount(async () => {
     try {
-      const jsonData = await invoke('greet');
-      const rawPasswords = JSON.parse(jsonData);
-      if (!Array.isArray(rawPasswords) || rawPasswords.length === 0) {
-        status.set('empty');
-        return;
-      }
+      const jsonData: string = await invoke('passwords');
+      const rawPasswords  = JSON.parse(jsonData);
+
+      
       const entriesData = rawPasswords.map((p: any, index: number) => {
         const domain = getDomain(p.url);
-        const websiteInfo = websiteIcons[domain] || { account: domain || 'Unknown', icon: '/icons/default.svg' };
+        const account = domain ? (websiteAccounts[domain] || domain) : 'Unknown';
+        const icon = domain ? `https://${domain}/favicon.ico` : '/icons/default.svg';
+
         return {
           id: index + 1,
-          icon: websiteInfo.icon,
-          account: websiteInfo.account,
+          icon,
+          account,
           username: p.username,
           date_created: p.date_created,
           date_modified: p.date_modified,
         };
       });
+
       entries.set(entriesData);
-      status.set('success');
+      status.set(entriesData.length ? 'success' : 'empty');
     } catch (error) {
-      console.error('Failed to fetch password data:', error);
+      console.error('Failed to load passwords:', error);
       status.set('error');
     }
   });
 
   function toggleSort(key: keyof Entry) {
-    if ($sortKey === key) {
-      sortAsc.set(!$sortAsc);
-    } else {
-      sortKey.set(key);
+    sortKey.update($sortKey => {
+      if ($sortKey === key) {
+        sortAsc.update($asc => !$asc);
+        return key;
+      }
       sortAsc.set(true);
-    }
+      return key;
+    });
   }
 
   async function reveal(id: number) {
     revealLoading.set(id);
-    console.log('reveal', id);
-    // Placeholder for future password decryption
-    // try {
-    //   const password = await invoke('get_password', { id });
-    //   // Display password (e.g., in a modal)
-    // } catch (error) {
-    //   console.error('Failed to reveal password:', error);
-    // }
-    setTimeout(() => revealLoading.set(null), 500); // Simulate async operation
+    try {
+      // const password = await invoke('get_password', { id });
+      // Handle password reveal logic
+    } catch (error) {
+      console.error('Password reveal failed:', error);
+    }
+    revealLoading.set(null);
   }
 </script>
 
 <div class="page-wrapper">
-  <!-- SEARCH BAR -->
+  <!-- Search Bar -->
   <div class="toolbar">
     <div class="search-wrapper">
       <img class="search-icon" src="/icons/search.svg" alt="Search" />
@@ -127,7 +130,7 @@
     </div>
   </div>
 
-  <!-- STATUS MESSAGE -->
+  <!-- Status Messages -->
   {#if $status === 'loading'}
     <div class="status-message">Loading...</div>
   {:else if $status === 'empty'}
@@ -135,45 +138,33 @@
   {:else if $status === 'error'}
     <div class="status-message error">Failed to load password data.</div>
   {:else}
-    <!-- TABLE WITH FIXED HEADER -->
+    <!-- Password Table -->
     <div class="table-wrapper">
       <table class="entries" role="grid">
         <thead>
           <tr>
-            <th
-              on:click={() => toggleSort('account')}
-              class:active={$sortKey === 'account'}
-              class:asc={$sortAsc}
-              role="columnheader"
-              aria-sort={$sortKey === 'account' ? ($sortAsc ? 'ascending' : 'descending') : 'none'}
-            >
+            <th on:click={() => toggleSort('account')}
+                class:active={$sortKey === 'account'}
+                class:asc={$sortAsc}
+                aria-sort={$sortKey === 'account' ? ($sortAsc ? 'ascending' : 'descending') : 'none'}>
               Account
             </th>
-            <th
-              on:click={() => toggleSort('username')}
-              class:active={$sortKey === 'username'}
-              class:asc={$sortAsc}
-              role="columnheader"
-              aria-sort={$sortKey === 'username' ? ($sortAsc ? 'ascending' : 'descending') : 'none'}
-            >
+            <th on:click={() => toggleSort('username')}
+                class:active={$sortKey === 'username'}
+                class:asc={$sortAsc}
+                aria-sort={$sortKey === 'username' ? ($sortAsc ? 'ascending' : 'descending') : 'none'}>
               Username
             </th>
-            <th
-              on:click={() => toggleSort('date_created')}
-              class:active={$sortKey === 'date_created'}
-              class:asc={$sortAsc}
-              role="columnheader"
-              aria-sort={$sortKey === 'date_created' ? ($sortAsc ? 'ascending' : 'descending') : 'none'}
-            >
+            <th on:click={() => toggleSort('date_created')}
+                class:active={$sortKey === 'date_created'}
+                class:asc={$sortAsc}
+                aria-sort={$sortKey === 'date_created' ? ($sortAsc ? 'ascending' : 'descending') : 'none'}>
               Date Created
             </th>
-            <th
-              on:click={() => toggleSort('date_modified')}
-              class:active={$sortKey === 'date_modified'}
-              class:asc={$sortAsc}
-              role="columnheader"
-              aria-sort={$sortKey === 'date_modified' ? ($sortAsc ? 'ascending' : 'descending') : 'none'}
-            >
+            <th on:click={() => toggleSort('date_modified')}
+                class:active={$sortKey === 'date_modified'}
+                class:asc={$sortAsc}
+                aria-sort={$sortKey === 'date_modified' ? ($sortAsc ? 'ascending' : 'descending') : 'none'}>
               Date Modified
             </th>
             <th>Password</th>
@@ -184,26 +175,19 @@
           {#each $filtered as e}
             <tr role="row">
               <td class="account-cell" role="gridcell">
-                <img src={e.icon} alt={`${e.account} icon`} />
+                <img src={e.icon} alt={e.account} on:error={(e) => e.target.src = '/icons/default.svg'} />
                 {e.account}
               </td>
               <td role="gridcell">{e.username}</td>
-              <td role="gridcell">{new Date(e.date_created).toLocaleString()}</td>
-              <td role="gridcell">{new Date(e.date_modified).toLocaleString()}</td>
+              <td role="gridcell">{new Date(e.date_created).toLocaleDateString()}</td>
+              <td role="gridcell">{new Date(e.date_modified).toLocaleDateString()}</td>
               <td role="gridcell">••••••••</td>
               <td role="gridcell">
-                <button
-                  class="eye-btn"
-                  on:click={() => reveal(e.id)}
-                  disabled={$revealLoading === e.id}
-                  aria-label="Reveal password for {e.account}"
-                >
-                  <img
-                    class="eye-icon"
-                    src="/icons/eye.svg"
-                    alt=""
-                    aria-hidden="true"
-                  />
+                <button class="eye-btn"
+                        on:click={() => reveal(e.id)}
+                        disabled={$revealLoading === e.id}
+                        aria-label="Reveal password for {e.account}">
+                  <img class="eye-icon" src="/icons/eye.svg" alt="" />
                 </button>
               </td>
             </tr>
@@ -214,24 +198,24 @@
   {/if}
 </div>
 
+
 <style>
   :global(:root) {
-    --panel: #141414;
-    --text: #e0e0e0;
-    --muted: #777;
-    --hover: #272727;
+    --panel:  #141414;
+    --text:   #e0e0e0;
+    --muted:  #777;
+    --hover:  #272727;
     --border: #444;
-    --error: #ff5555;
   }
 
-  /* Layout */
+  /* 1) Layout */
   .page-wrapper {
     display: flex;
     flex-direction: column;
     height: 100%;
   }
 
-  /* Toolbar */
+  /* 2) Toolbar */
   .toolbar {
     padding-bottom: 1rem;
   }
@@ -266,24 +250,13 @@
     color: var(--muted);
   }
 
-  /* Status Message */
-  .status-message {
-    text-align: center;
-    padding: 2rem;
-    color: var(--muted);
-    font-size: 1.2rem;
-  }
-  .status-message.error {
-    color: var(--error);
-  }
-
-  /* Table wrapper */
+  /* 3) Table wrapper: scrolls only rows */
   .table-wrapper {
     flex: 1;
     overflow-y: auto;
   }
 
-  /* Table */
+  /* 4) Single table, fixed header */
   .entries {
     width: 100%;
     border-collapse: collapse;
@@ -303,29 +276,6 @@
     font-weight: 700;
     font-size: 1.15rem;
     color: var(--text);
-    cursor: pointer;
-    user-select: none;
-  }
-  thead th.active {
-    color: #ffffff;
-  }
-  thead th::after {
-    content: '';
-    display: inline-block;
-    width: 0;
-    height: 0;
-    margin-left: 0.5rem;
-    vertical-align: middle;
-  }
-  thead th.active.asc::after {
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-bottom: 5px solid var(--text);
-  }
-  thead th.active:not(.asc)::after {
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 5px solid var(--text);
   }
   th:nth-child(1) { width: 20%; } /* Account */
   th:nth-child(2) { width: 20%; } /* Username */
@@ -334,7 +284,7 @@
   th:nth-child(5) { width: 10%; } /* Password */
   th:nth-child(6) { width: 10%; } /* Button */
 
-  /* Body rows */
+  /* 5) Body rows */
   tbody tr:hover {
     background: var(--hover);
   }
@@ -342,9 +292,9 @@
     padding: 1rem;
     vertical-align: middle;
   }
-  td:first-child { padding-right: 2rem; }
+  td:first-child  { padding-right: 2rem; }
   td:nth-child(2) { padding-right: 0.5rem; }
-  td:nth-child(6) { text-align: center; }
+  td:nth-child(6) { text-align: center; } /* Center the button column */
 
   .account-cell {
     display: flex;
@@ -365,12 +315,8 @@
     border-radius: 6px;
     cursor: pointer;
   }
-  .eye-btn:hover:not(:disabled) {
+  .eye-btn:hover {
     background: var(--hover);
-  }
-  .eye-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
   }
   .eye-icon {
     width: 1.5rem;
