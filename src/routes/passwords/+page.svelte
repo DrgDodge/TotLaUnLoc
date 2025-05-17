@@ -12,7 +12,6 @@
     lastChangeDays: number;
   }
 
-  // Domain to account name mapping
   const websiteAccounts: { [key: string]: string } = {
     'google.com': 'Google',
     'facebook.com': 'Facebook',
@@ -42,18 +41,15 @@
   const filtered = derived(
     [entries, search, sortKey, sortAsc],
     ([$entries, $search, $sortKey, $sortAsc]) => {
-      const filtered = $entries.filter(e =>
-        e.account.toLowerCase().includes($search.toLowerCase())
-      );
-      return filtered.sort((a, b) => {
-        const aVal = a[$sortKey];
-        const bVal = b[$sortKey];
-        const order = $sortAsc ? 1 : -1;
-        if (typeof aVal === 'string') {
-          return aVal.localeCompare(bVal as string) * order;
-        }
-        return (aVal > bVal ? 1 : -1) * order;
-      });
+      return $entries
+        .filter(e => e.account.toLowerCase().includes($search.toLowerCase()))
+        .sort((a, b) => {
+          const aVal = a[$sortKey];
+          const bVal = b[$sortKey];
+          const order = $sortAsc ? 1 : -1;
+          if (typeof aVal === 'string') return aVal.localeCompare(bVal as string) * order;
+          return (aVal > bVal ? 1 : -1) * order;
+        });
     }
   );
 
@@ -68,14 +64,7 @@
         const icon = domain ? `https://${domain}/favicon.ico` : '/icons/default.svg';
         const modified = new Date(p.date_modified).getTime();
         const diffDays = Math.floor((now - modified) / (1000 * 60 * 60 * 24));
-        return {
-          id: idx + 1,
-          icon,
-          account,
-          username: p.username,
-          url: p.url,
-          lastChangeDays: diffDays,
-        };
+        return { id: idx + 1, icon, account, username: p.username, url: p.url, lastChangeDays: diffDays };
       });
       entries.set(data);
       status.set(data.length ? 'success' : 'empty');
@@ -86,8 +75,8 @@
   });
 
   function toggleSort(key: keyof Entry) {
-    sortKey.update(k => k === key ? key : key);
-    sortAsc.update(a => (sortKey === key) ? !a : true);
+    sortKey.update(k => (k === key ? key : key));
+    sortAsc.update((asc) => (sortKey === key ? !asc : true));
   }
 </script>
 
@@ -95,7 +84,7 @@
   <div class="toolbar">
     <div class="search-wrapper">
       <img class="search-icon" src="/icons/search.svg" alt="Search" />
-      <input type="text" placeholder="Search" bind:value={$search} />
+      <input type="text" placeholder="Search" bind:value={$search} aria-label="Search accounts" />
     </div>
   </div>
 
@@ -107,7 +96,7 @@
     <div class="status-message error">Failed to load passwords.</div>
   {:else}
     <div class="table-wrapper">
-      <table class="entries">
+      <table class="entries" role="grid">
         <thead>
           <tr>
             <th on:click={() => toggleSort('account')}>Account</th>
@@ -120,14 +109,11 @@
           {#each $filtered as e}
             <tr>
               <td class="account-cell">
-                <img src={e.icon} alt={e.account} on:error={e => e.target.src = '/icons/default.svg'} />
+                <img src={e.icon} alt={e.account} on:error={(e) => e.target.src = '/icons/default.svg'} />
                 {e.account}
               </td>
               <td>{e.username}</td>
-              <td class="last-change"
-                  class:recent={e.lastChangeDays < 180}
-                  class:moderate={e.lastChangeDays >= 180 && e.lastChangeDays < 365}
-                  class:stale={e.lastChangeDays >= 365}>
+              <td class="last-change" class:recent={e.lastChangeDays < 180} class:moderate={e.lastChangeDays < 365 && e.lastChangeDays >= 180} class:stale={e.lastChangeDays >= 365}>
                 {#if e.lastChangeDays < 30}
                   {e.lastChangeDays} days ago
                 {:else if e.lastChangeDays < 365}
@@ -151,40 +137,120 @@
 
 <style>
   :global(:root) {
-    --panel:  #141414;
-    --text:   #e0e0e0;
-    --muted:  #777;
-    --hover:  #272727;
+    --panel: #141414;
+    --text: #e0e0e0;
+    --muted: #777;
+    --hover: #272727;
     --border: #444;
   }
-  .page-wrapper { display: flex; flex-direction: column; height: 100%; }
-  .toolbar { padding-bottom: 1rem; }
-  .search-wrapper { position: relative; width: 100%; }
-  .search-icon { position: absolute; left: 1rem; top: 50%; width: 1.75rem; height: 1.75rem; transform: translateY(-50%); filter: brightness(0) invert(1); }
-  input { width: 100%; padding: 0.75rem 1rem 0.75rem 3rem; border: none; border-radius: 8px; background: var(--panel); color: var(--text); }
+  .page-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    background: var(--panel);
+  }
+  .toolbar {
+    padding: 1rem;
+    background: var(--panel);
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .search-wrapper {
+    width: 100%;
+    max-width: 600px;
+    position: relative;
+  }
+  .search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    width: 1.5rem;
+    height: 1.5rem;
+    transform: translateY(-50%);
+    fill: var(--muted);
+    pointer-events: none;
+  }
+  input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.75rem 1rem 0.75rem 3rem;
+    border: none;
+    border-radius: 24px;
+    background: var(--panel);
+    color: var(--text);
+    font-size: 1rem;
+    border: 1px solid var(--border);
+    transition: border 0.2s;
+  }
+  input:focus {
+    outline: none;
+    border-color: var(--text);
+  }
+  input::placeholder {
+    color: var(--muted);
+  }
 
-  .table-wrapper { flex: 1; overflow-y: auto; }
-  .entries { width: 100%; border-collapse: collapse; table-layout: fixed; }
-  thead { background: var(--panel); position: sticky; top: 0; z-index: 1; border-bottom: 1px solid var(--border); }
-  thead th { padding: 1rem; text-align: left; font-weight: 700; font-size: 1.15rem; color: var(--text); }
+  .table-wrapper {
+    flex: 1;
+    overflow-y: auto;
+  }
+  .entries {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+  thead {
+    background: var(--panel);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    border-bottom: 1px solid var(--border);
+  }
+  thead th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--text);
+    cursor: pointer;
+  }
   th:nth-child(1), td:nth-child(1) { width: 35%; }
   th:nth-child(2), td:nth-child(2) { width: 25%; }
   th:nth-child(3), td:nth-child(3) { width: 25%; }
   th:nth-child(4), td:nth-child(4) { width: 15%; text-align: center; }
+
   tbody tr:hover { background: var(--hover); }
-  tbody td { padding: 1rem; vertical-align: middle; }
+  tbody td { padding: 0.75rem 1rem; vertical-align: middle; }
 
-  .account-cell { display: flex; align-items: center; gap: 1rem; }
-  .account-cell img { width: 2rem; height: 2rem; object-fit: contain; background: white; border-radius: 4px; }
+  .account-cell { display: flex; align-items: center; gap: 0.75rem; }
+  .account-cell img { width: 1.75rem; height: 1.75rem; object-fit: contain; background: white; border-radius: 4px; }
 
-  .last-change.recent { color: #4caf50; }   /* green */
-  .last-change.moderate { color: #ffeb3b; } /* yellow */
-  .last-change.stale { color: #f44336; }    /* red */
+  .last-change.recent { color: #4caf50; }
+  .last-change.moderate { color: #ffeb3b; }
+  .last-change.stale { color: #f44336; }
 
-  .manage-btn { background: var(--panel); padding: 0.25rem; border-radius: 6px; display: inline-flex; align-items: center; }
-  .manage-btn img { width: 1.5rem; height: 1.5rem; filter: brightness(0) invert(1); }
+  .manage-btn { background: transparent; padding: 0.25rem; border-radius: 6px; display: inline-flex; align-items: center; }
+  .manage-btn img { width: 1.25rem; height: 1.25rem; filter: brightness(0) invert(1); }
   .manage-btn:hover { background: var(--hover); }
 
-  .status-message { padding: 1rem; color: var(--muted); }
+  /* Custom scrollbar */
+  .table-wrapper::-webkit-scrollbar {
+    width: 8px;
+  }
+  .table-wrapper::-webkit-scrollbar-track {
+    background: var(--panel);
+  }
+  .table-wrapper::-webkit-scrollbar-thumb {
+    background-color: var(--border);
+    border-radius: 4px;
+  }
+  .table-wrapper::-webkit-scrollbar-thumb:hover {
+    background-color: var(--text);
+  }
+
+  .status-message { padding: 1rem; color: var(--muted); text-align: center; }
   .status-message.error { color: #f44336; }
 </style>
