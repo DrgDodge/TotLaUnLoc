@@ -83,7 +83,7 @@
 <div class="page-wrapper">
   <div class="toolbar">
     <div class="search-wrapper">
-      <img class="search-icon" src="/icons/search.svg" alt="Search" />
+      <img class="search-icon" src="/icons/search.svg" alt="" />
       <input type="text" placeholder="Search" bind:value={$search} aria-label="Search accounts" />
     </div>
   </div>
@@ -156,38 +156,31 @@
     flex: none;
     display: flex;
     align-items: center;
-    justify-content: center;
   }
   .search-wrapper {
-    width: 100%;
-    max-width: 600px;
+    flex: 1;
     position: relative;
+    min-width: 200px;
   }
   .search-icon {
     position: absolute;
     left: 1rem;
     top: 50%;
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 1.75rem;
+    height: 1.75rem;
     transform: translateY(-50%);
     fill: var(--muted);
     pointer-events: none;
   }
   input {
     width: 100%;
-    box-sizing: border-box;
     padding: 0.75rem 1rem 0.75rem 3rem;
     border: none;
-    border-radius: 24px;
+    border-radius: 8px;
     background: var(--panel);
     color: var(--text);
-    font-size: 1rem;
-    border: 1px solid var(--border);
-    transition: border 0.2s;
-  }
-  input:focus {
-    outline: none;
-    border-color: var(--text);
+    font-size: 1.1rem;
+    box-sizing: border-box;
   }
   input::placeholder {
     color: var(--muted);
