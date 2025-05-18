@@ -201,6 +201,7 @@
     transform: translateY(-50%);
     fill: var(--muted);
     pointer-events: none;
+    filter: invert(1);
   }
 
   input {

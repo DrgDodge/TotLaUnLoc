@@ -83,6 +83,17 @@
                  "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
 
+  :global(body.dark-mode) {
+		filter: invert(1)
+	}
+
+  :global(body.dark-mode img) {
+    filter: invert(1);
+  }
+  :global(body.dark-mode .last-change) {
+    filter: invert(1);
+  }
+
   .app-container {
     display: flex;
     height: 100vh;

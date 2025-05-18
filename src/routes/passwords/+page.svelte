@@ -151,8 +151,8 @@
     background: var(--panel);
   }
   .toolbar {
-    padding: 1rem;
-    background: var(--panel);
+    padding: 1rem 0;
+    background: rgb(13, 13, 13);
     flex: none;
     display: flex;
     align-items: center;
@@ -171,6 +171,7 @@
     transform: translateY(-50%);
     fill: var(--muted);
     pointer-events: none;
+    filter: invert(1);
   }
   input {
     width: 100%;
