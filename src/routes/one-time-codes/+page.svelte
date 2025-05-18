@@ -180,6 +180,7 @@
 
   .toolbar {
     display: flex;
+    padding-top: 1rem;
     align-items: center;
     gap: 1rem;
     padding-bottom: 1rem;
