@@ -3,6 +3,9 @@
   import { writable, derived } from 'svelte/store';
   import { invoke } from '@tauri-apps/api/core';
 
+
+
+
   interface Entry {
     id: number;
     icon: string;
@@ -158,6 +161,7 @@
     align-items: center;
   }
   .search-wrapper {
+    padding-top: 0rem;
     flex: 1;
     position: relative;
     min-width: 200px;
@@ -247,4 +251,6 @@
 
   .status-message { padding: 1rem; color: var(--muted); text-align: center; }
   .status-message.error { color: #f44336; }
+
+  
 </style>

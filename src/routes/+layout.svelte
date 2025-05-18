@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { page } from '$app/stores';
-  import { beforeNavigate } from '$app/navigation';
-  import { onMount } from 'svelte';
+  import { page } from "$app/stores";
+  import { beforeNavigate } from "$app/navigation";
+  import { onMount } from "svelte";
 
   let isLoading = false;
   let loadingTimeout: NodeJS.Timeout | null = null;
@@ -11,15 +11,19 @@
     return Math.random() * (800 - 200) + 200; // Random value between 500ms and 2000ms
   };
 
+  function toggleTheme() {
+    window.document.body.classList.toggle("dark-mode");
+  }
+
   // Trigger loading state before navigation with random delay
   beforeNavigate(() => {
     // Clear any existing timeout to avoid overlap
     if (loadingTimeout) {
       clearTimeout(loadingTimeout);
     }
-    
+
     isLoading = true;
-    
+
     // Set random delay for loading bar
     const delay = getRandomDelay();
     loadingTimeout = setTimeout(() => {
@@ -43,24 +47,43 @@
 <div class="app-container">
   <aside class="sidebar">
     <nav class="nav-list">
-      <a class="nav-item {($page.url.pathname === '/passwords' ? 'active' : '')}" href="/passwords">
-        <img class="icon" src="/icons/key.svg" alt="Passwords icon">
+      <a
+        class="nav-item {$page.url.pathname === '/passwords' ? 'active' : ''}"
+        href="/passwords"
+      >
+        <img class="icon" src="/icons/key.svg" alt="Passwords icon" />
         Passwords
       </a>
-      <a class="nav-item {($page.url.pathname === '/one-time-codes' ? 'active' : '')}" href="/one-time-codes">
-        <img class="icon" src="/icons/clock.svg" alt="One-Time Codes icon">
+      <a
+        class="nav-item {$page.url.pathname === '/one-time-codes'
+          ? 'active'
+          : ''}"
+        href="/one-time-codes"
+      >
+        <img class="icon" src="/icons/clock.svg" alt="One-Time Codes icon" />
         One-Time Codes
       </a>
-      <a class="nav-item {($page.url.pathname === '/check-passwords' ? 'active' : '')}" href="/check-passwords">
-        <img class="icon" src="/icons/shield.svg" alt="Check Passwords icon">
+      <a
+        class="nav-item {$page.url.pathname === '/check-passwords'
+          ? 'active'
+          : ''}"
+        href="/check-passwords"
+      >
+        <img class="icon" src="/icons/shield.svg" alt="Check Passwords icon" />
         Check Passwords
       </a>
     </nav>
 
-    <a class="settings {($page.url.pathname === '/settings' ? 'active' : '')}" href="/settings">
+    <button
+      class="theme-btn"
+      on:click={toggleTheme}
+      aria-label="Change the theme of the app">
+      <img class="theme-icon" src="/icons/theme.svg" alt="Change theme" />Change Theme
+    </button>
+    <!-- <a class="settings {($page.url.pathname === '/settings' ? 'active' : '')}" href="/settings">
       <img class="icon" src="/icons/gear.svg" alt="Settings icon">
       Settings
-    </a>
+    </a> -->
   </aside>
 
   <main class="content">
@@ -79,13 +102,20 @@
   :global(html, body) {
     margin: 0;
     height: 100%;
-    font-family: 'Roboto Mono', -apple-system, BlinkMacSystemFont,
-                 "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family:
+      "Roboto Mono",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
+      Helvetica,
+      Arial,
+      sans-serif;
   }
 
   :global(body.dark-mode) {
-		filter: invert(1)
-	}
+    filter: invert(1);
+  }
 
   :global(body.dark-mode img) {
     filter: invert(1);
@@ -135,7 +165,8 @@
   .nav-item:hover {
     background: #3a3a3a;
   }
-  .nav-item.active, .settings.active {
+  .nav-item.active,
+  .settings.active {
     background: #4a4a4a;
   }
 
@@ -185,7 +216,7 @@
   }
 
   .loading-bar::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
@@ -218,22 +249,48 @@
   }
 
   /* Stagger the animation delay for each child element */
-  .content-wrapper > *:nth-child(1) { animation-delay: 0s; }
-  .content-wrapper > *:nth-child(2) { animation-delay: 0.1s; }
-  .content-wrapper > *:nth-child(3) { animation-delay: 0.2s; }
-  .content-wrapper > *:nth-child(4) { animation-delay: 0.3s; }
-  .content-wrapper > *:nth-child(5) { animation-delay: 0.4s; }
-  .content-wrapper > *:nth-child(6) { animation-delay: 0.5s; }
-  .content-wrapper > *:nth-child(7) { animation-delay: 0.6s; }
-  .content-wrapper > *:nth-child(8) { animation-delay: 0.7s; }
-  .content-wrapper > *:nth-child(9) { animation-delay: 0.8s; }
-  .content-wrapper > *:nth-child(10) { animation-delay: 0.9s; }
+  .content-wrapper > *:nth-child(1) {
+    animation-delay: 0s;
+  }
+  .content-wrapper > *:nth-child(2) {
+    animation-delay: 0.1s;
+  }
+  .content-wrapper > *:nth-child(3) {
+    animation-delay: 0.2s;
+  }
+  .content-wrapper > *:nth-child(4) {
+    animation-delay: 0.3s;
+  }
+  .content-wrapper > *:nth-child(5) {
+    animation-delay: 0.4s;
+  }
+  .content-wrapper > *:nth-child(6) {
+    animation-delay: 0.5s;
+  }
+  .content-wrapper > *:nth-child(7) {
+    animation-delay: 0.6s;
+  }
+  .content-wrapper > *:nth-child(8) {
+    animation-delay: 0.7s;
+  }
+  .content-wrapper > *:nth-child(9) {
+    animation-delay: 0.8s;
+  }
+  .content-wrapper > *:nth-child(10) {
+    animation-delay: 0.9s;
+  }
   /* Fallback for additional elements */
-  .content-wrapper > *:nth-child(n+11) { animation-delay: 1s; }
+  .content-wrapper > *:nth-child(n + 11) {
+    animation-delay: 1s;
+  }
 
   @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   @keyframes fadeInElement {
@@ -245,5 +302,41 @@
       opacity: 1;
       transform: translateY(0);
     }
+  }
+
+  .theme-btn {
+    color: white;
+    background: var(--panel);
+    border: none;
+    padding: 0.25rem;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: left;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: transparent;
+    border: none;
+    color: inherit;
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 0.75rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-top: auto; /* push to bottom */
+    text-decoration: none;
+  }
+
+  .theme-btn:hover {
+    background: var(--hover);
+  }
+
+  .theme-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    filter: brightness(0) invert(1);
   }
 </style>
