@@ -1,5 +1,10 @@
 # **TotLaUnLoc**
 
+Cod sursa: 
+```
+https://github.com/DrgDodge/TotLaUnLoc.git
+```
+
 Imaginile folosite se pot gasi in folderul `static/icons`
 
 **Dependentele folosite sunt:**
