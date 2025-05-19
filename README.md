@@ -1,9 +1,12 @@
 # **TotLaUnLoc**
 
-Cod sursa: 
+**Cod sursa:** 
 ```
 https://github.com/DrgDodge/TotLaUnLoc.git
 ```
+
+**Documentatie:**
+https://docs.google.com/document/d/1HOPQRNpzEzPcdt7Ma_Uq_eCK-m01Qx9MOTAeGv0YngI/edit?usp=sharing
 
 Imaginile folosite se pot gasi in folderul `static/icons`
 
