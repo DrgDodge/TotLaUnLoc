@@ -4,6 +4,10 @@
   import { invoke } from '@tauri-apps/api/core';
   import zxcvbn from 'zxcvbn';
   import Chart from 'chart.js/auto';
+  import { getCurrentWindow } from '@tauri-apps/api/window';
+
+
+
 
   /** @type {{ id: number; icon: string; account: string; username: string; url: string; lastChangeDays: number; password: string; passwordStrength: 'weak'|'medium'|'strong'|null; breachStatus: { account: { status: string; result: number|null; details?: any[] }; domain: { status: string; result: number|null; details?: any[] } } }[]} */
   const entries = writable([]);
@@ -392,6 +396,12 @@
   }
 </script>
 
+
+
+
+
+
+
 <div class="page-wrapper">
   <h1>Password Health Check</h1>
   <div class="stats-dashboard">
@@ -619,4 +629,6 @@
   .table-wrapper::-webkit-scrollbar-thumb:hover { background-color: var(--text); }
   .status-message { padding: 1rem; color: var(--muted); text-align: center; }
   .status-message.error { color: #f44336; }
+
+  
 </style>

@@ -2,29 +2,20 @@
   import { page } from "$app/stores";
   import { beforeNavigate } from "$app/navigation";
   import { onMount } from "svelte";
+  import { getCurrentWindow } from '@tauri-apps/api/window';
 
   let isLoading = false;
   let loadingTimeout: NodeJS.Timeout | null = null;
 
-  // Function to generate random delay between 0.5s and 2s (in milliseconds)
-  const getRandomDelay = () => {
-    return Math.random() * (800 - 200) + 200; // Random value between 500ms and 2000ms
-  };
+  const getRandomDelay = () => Math.random() * (800 - 200) + 200;
 
   function toggleTheme() {
     window.document.body.classList.toggle("dark-mode");
   }
 
-  // Trigger loading state before navigation with random delay
   beforeNavigate(() => {
-    // Clear any existing timeout to avoid overlap
-    if (loadingTimeout) {
-      clearTimeout(loadingTimeout);
-    }
-
+    if (loadingTimeout) clearTimeout(loadingTimeout);
     isLoading = true;
-
-    // Set random delay for loading bar
     const delay = getRandomDelay();
     loadingTimeout = setTimeout(() => {
       isLoading = false;
@@ -32,104 +23,66 @@
     }, delay);
   });
 
-  // Ensure loading state is reset on initial mount
   onMount(() => {
     isLoading = false;
     return () => {
-      // Cleanup timeout on component destroy
-      if (loadingTimeout) {
-        clearTimeout(loadingTimeout);
-      }
+      if (loadingTimeout) clearTimeout(loadingTimeout);
     };
   });
 
+  const appWindow = getCurrentWindow();
 
-  import { getCurrentWindow } from '@tauri-apps/api/window';
+function minimize() {
+    appWindow.minimize();
+  }
 
-// when using `"withGlobalTauri": true`, you may use
-// const { getCurrentWindow } = window.__TAURI__.window;
+  function close() {
+    appWindow.close();
+  }
 
-const appWindow = getCurrentWindow();
+    function startDrag() {
+    appWindow.startDragging();
+  }
 
-function minimize(){
-document
-  appWindow.minimize();
+  function handleMouseDown(event: MouseEvent) {
+  const target = event.target as HTMLElement;
+
+  // Prevent drag if clicking on a button or inside one
+  if (target.closest('button')) return;
+
+  startDrag();
 }
 
-function maximize(){
-document
-  appWindow.toggleMaximize();
-}
-
-
-
-document
-  .getElementById('titlebar-maximize')
-  ?.addEventListener('click', () => appWindow.toggleMaximize());
-document
-  .getElementById('titlebar-close')
-  ?.addEventListener('click', () => appWindow.close());
 </script>
+<div class="titlebar" role="banner" on:mousedown={handleMouseDown}>
+    <button class="titlebar-button" id="titlebar-close" on:click={close}>
+    <img src="https://api.iconify.design/mdi:close.svg" alt="close" />
+  </button>
+  <button class="titlebar-button" id="titlebar-minimize" on:click={minimize}>
+    <img src="https://api.iconify.design/mdi:window-minimize.svg" alt="minimize" />
+  </button>
+</div>
 
 <div class="app-container">
-  <div data-tauri-drag-region class="titlebar">
-  <div class="titlebar-button" id="titlebar-minimize" on:click={minimize}>
-    <img
-      src="https://api.iconify.design/mdi:window-minimize.svg"
-      alt="minimize"
-    />
-  </div>
-  <div class="titlebar-button" id="titlebar-maximize">
-    <img
-      src="https://api.iconify.design/mdi:window-maximize.svg"
-      alt="maximize"
-    />
-  </div>
-  <div class="titlebar-button" id="titlebar-close">
-    <img src="https://api.iconify.design/mdi:close.svg" alt="close" />
-  </div>
-</div>
   <aside class="sidebar">
     <nav class="nav-list">
-      <a
-        class="nav-item {$page.url.pathname === '/passwords' ? 'active' : ''}"
-        href="/passwords"
-      >
+      <a class="nav-item {$page.url.pathname === '/passwords' ? 'active' : ''}" href="/passwords">
         <img class="icon" src="/icons/key.svg" alt="Passwords icon" />
         Passwords
       </a>
-      <a
-        class="nav-item {$page.url.pathname === '/one-time-codes'
-          ? 'active'
-          : ''}"
-        href="/one-time-codes"
-      >
+      <a class="nav-item {$page.url.pathname === '/one-time-codes' ? 'active' : ''}" href="/one-time-codes">
         <img class="icon" src="/icons/clock.svg" alt="One-Time Codes icon" />
         One-Time Codes
       </a>
-      <a
-        class="nav-item {$page.url.pathname === '/check-passwords'
-          ? 'active'
-          : ''}"
-        href="/check-passwords"
-      >
+      <a class="nav-item {$page.url.pathname === '/check-passwords' ? 'active' : ''}" href="/check-passwords">
         <img class="icon" src="/icons/shield.svg" alt="Check Passwords icon" />
         Check Passwords
       </a>
     </nav>
-
-    <button
-      class="theme-btn"
-      on:click={toggleTheme}
-      aria-label="Change the theme of the app">
+    <button class="theme-btn" on:click={toggleTheme} aria-label="Change the theme of the app">
       <img class="theme-icon" src="/icons/theme.svg" alt="Change theme" />Change Theme
     </button>
-    <!-- <a class="settings {($page.url.pathname === '/settings' ? 'active' : '')}" href="/settings">
-      <img class="icon" src="/icons/gear.svg" alt="Settings icon">
-      Settings
-    </a> -->
   </aside>
-
   <main class="content">
     {#if isLoading}
       <div class="loading-bar"></div>
@@ -384,27 +337,48 @@ document
     filter: brightness(0) invert(1);
   }
 
-  .titlebar {
-  height: 30px;
-  background: #329ea3;
-  user-select: none;
-  display: flex;
-  justify-content: flex-end;
+.titlebar {
+    background: black; /* Sets button background to full black */
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-}
-.titlebar-button {
-  display: inline-flex;
-  justify-content: center;
+  display: flex;
   align-items: center;
-  width: 30px;
-  height: 30px;
-  user-select: none;
-  -webkit-user-select: none;
+  background: var(--panel);
+  z-index: 1000;
+    padding: 0.5rem 4rem 0.5rem 0.5rem; /* Extended padding-right to 2rem */
+  border-radius: 0 0 8px 8px;
+  outline: none;
+  gap: 0.25rem; /* Adds space between buttons */
+    background: black; /* Sets button background to full black */
 }
-.titlebar-button:hover {
-  background: #5bbec3;
+
+.titlebar-button {
+    background: black; /* Sets button background to full black */
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
 }
+
+.titlebar-button img {
+  width: 1.5rem;
+  height: 1.5rem;
+  filter: invert(1); /* Ensures icons are visible on black background */
+}
+
+.page-wrapper {
+  padding-top: 2.5rem; /* Adjusted to account for titlebar height */
+  display: flex;
+  flex-direction: column;
+  height: 90vh;
+  overflow: hidden;
+  background: var(--panel);
+  padding: 1rem;
+}
+
+
 </style>
