@@ -30,9 +30,9 @@ pub struct AppState {
 fn parse_otpauth(url_str: &str) -> Result<(String, String, TOTP), Box<dyn std::error::Error>> {
     let url = Url::parse(url_str)?;
     let path = url.path();
-    let label = path.trim_start_matches('/').to_string(); // e.g., "mire2"
+    let label = path.trim_start_matches('/').to_string();
     let query: std::collections::HashMap<_, _> = url.query_pairs().into_owned().collect();
-    let issuer = query.get("issuer").cloned().unwrap_or_default(); // e.g., "filelistt.io"
+    let issuer = query.get("issuer").cloned().unwrap_or_default();
     let secret_base32 = query.get("secret").ok_or("Missing secret")?;
     let secret = base32::decode(base32::Alphabet::RFC4648 { padding: false }, secret_base32)
         .ok_or("Invalid base32 secret")?;

@@ -1,12 +1,12 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-#[cfg_attr(mobile, tauri::mobile_entry_point)]
-
 mod passwords;
-mod totp;
+use passwords::{passwords};
 
+mod totp;
 use totp::{add_account, delete_account, get_accounts_with_codes, AppState};
+
 use std::sync::Mutex;
 
 pub fn run() {
@@ -17,7 +17,7 @@ pub fn run() {
         })
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
-            passwords::passwords,
+            passwords,
             add_account,
             delete_account,
             get_accounts_with_codes
