@@ -6,6 +6,12 @@
 
   let isLoading = false;
   let loadingTimeout: NodeJS.Timeout | null = null;
+  let isDragging = false; // Track dragging state
+  let isMouseOver = false; // Track if mouse is over the titlebar
+  let isExpanded = false; // Track if titlebar is expanded
+
+  // Update isExpanded reactively: expand if dragging or mouse is over the titlebar
+  $: isExpanded = isDragging || isMouseOver;
 
   const getRandomDelay = () => Math.random() * (800 - 200) + 200;
 
@@ -32,7 +38,7 @@
 
   const appWindow = getCurrentWindow();
 
-function minimize() {
+  function minimize() {
     appWindow.minimize();
   }
 
@@ -40,26 +46,39 @@ function minimize() {
     appWindow.close();
   }
 
-    function startDrag() {
+  function startDrag() {
     appWindow.startDragging();
   }
 
   function handleMouseDown(event: MouseEvent) {
-  const target = event.target as HTMLElement;
+    const target = event.target as HTMLElement;
 
-  // Prevent drag if clicking on a button or inside one
-  if (target.closest('button')) return;
+    if (target.closest('button')) return;
 
-  startDrag();
-}
+    isDragging = true;
+    startDrag();
 
+    const handleMouseUp = () => {
+      isDragging = false;
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+    window.addEventListener('mouseup', handleMouseUp);
+  }
 </script>
-<div class="titlebar" role="banner" on:mousedown={handleMouseDown}>
-    <button class="titlebar-button" id="titlebar-close" on:click={close}>
-    <img src="https://api.iconify.design/mdi:close.svg" alt="close" />
-  </button>
+
+<div
+  class="titlebar"
+  class:expanded={isExpanded}
+  on:mouseenter={() => isMouseOver = true}
+  on:mouseleave={() => isMouseOver = false}
+  role="banner"
+  on:mousedown={handleMouseDown}
+>
   <button class="titlebar-button" id="titlebar-minimize" on:click={minimize}>
     <img src="https://api.iconify.design/mdi:window-minimize.svg" alt="minimize" />
+  </button>
+  <button class="titlebar-button" id="titlebar-close" on:click={close}>
+    <img src="https://api.iconify.design/mdi:close.svg" alt="close" />
   </button>
 </div>
 
@@ -246,59 +265,26 @@ function minimize() {
   }
 
   /* Stagger the animation delay for each child element */
-  .content-wrapper > *:nth-child(1) {
-    animation-delay: 0s;
-  }
-  .content-wrapper > *:nth-child(2) {
-    animation-delay: 0.1s;
-  }
-  .content-wrapper > *:nth-child(3) {
-    animation-delay: 0.2s;
-  }
-  .content-wrapper > *:nth-child(4) {
-    animation-delay: 0.3s;
-  }
-  .content-wrapper > *:nth-child(5) {
-    animation-delay: 0.4s;
-  }
-  .content-wrapper > *:nth-child(6) {
-    animation-delay: 0.5s;
-  }
-  .content-wrapper > *:nth-child(7) {
-    animation-delay: 0.6s;
-  }
-  .content-wrapper > *:nth-child(8) {
-    animation-delay: 0.7s;
-  }
-  .content-wrapper > *:nth-child(9) {
-    animation-delay: 0.8s;
-  }
-  .content-wrapper > *:nth-child(10) {
-    animation-delay: 0.9s;
-  }
-  /* Fallback for additional elements */
-  .content-wrapper > *:nth-child(n + 11) {
-    animation-delay: 1s;
-  }
+  .content-wrapper > *:nth-child(1) { animation-delay: 0s; }
+  .content-wrapper > *:nth-child(2) { animation-delay: 0.1s; }
+  .content-wrapper > *:nth-child(3) { animation-delay: 0.2s; }
+  .content-wrapper > *:nth-child(4) { animation-delay: 0.3s; }
+  .content-wrapper > *:nth-child(5) { animation-delay: 0.4s; }
+  .content-wrapper > *:nth-child(6) { animation-delay: 0.5s; }
+  .content-wrapper > *:nth-child(7) { animation-delay: 0.6s; }
+  .content-wrapper > *:nth-child(8) { animation-delay: 0.7s; }
+  .content-wrapper > *:nth-child(9) { animation-delay: 0.8s; }
+  .content-wrapper > *:nth-child(10) { animation-delay: 0.9s; }
+  .content-wrapper > *:nth-child(n + 11) { animation-delay: 1s; }
 
   @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 
   @keyframes fadeInElement {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   .theme-btn {
@@ -311,17 +297,13 @@ function minimize() {
     display: flex;
     align-items: center;
     justify-content: left;
-    display: flex;
-    align-items: center;
     gap: 0.75rem;
     background: transparent;
-    border: none;
     color: inherit;
     font-size: 1rem;
     font-weight: 600;
     padding: 0.75rem;
     border-radius: 6px;
-    cursor: pointer;
     transition: background 0.2s;
     margin-top: auto; /* push to bottom */
     text-decoration: none;
@@ -337,48 +319,56 @@ function minimize() {
     filter: brightness(0) invert(1);
   }
 
-.titlebar {
-    background: black; /* Sets button background to full black */
-  position: fixed;
-  top: 0;
-  left: 0;
-  display: flex;
-  align-items: center;
-  background: var(--panel);
-  z-index: 1000;
-    padding: 0.5rem 4rem 0.5rem 0.5rem; /* Extended padding-right to 2rem */
-  border-radius: 0 0 8px 8px;
-  outline: none;
-  gap: 0.25rem; /* Adds space between buttons */
-    background: black; /* Sets button background to full black */
-}
+  .titlebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 10px;
+    overflow: hidden;
+    transition: height 0.3s ease-in-out;
+    background: black;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end; /* Align buttons to the right */
+    gap: 0.25rem;
+  }
 
-.titlebar-button {
-    background: black; /* Sets button background to full black */
-  border: none;
-  cursor: pointer;
-  padding: 0.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  outline: none;
-}
+  .titlebar.expanded {
+    height: 2.5rem; /* Expanded height when isExpanded is true */
+  }
 
-.titlebar-button img {
-  width: 1.5rem;
-  height: 1.5rem;
-  filter: invert(1); /* Ensures icons are visible on black background */
-}
+  .titlebar-button {
+    background: black;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    outline: none;
+    opacity: 0; /* Hide buttons by default */
+    transition: opacity 0.3s ease-in-out; /* Smooth fade effect */
+  }
 
-.page-wrapper {
-  padding-top: 2.5rem; /* Adjusted to account for titlebar height */
-  display: flex;
-  flex-direction: column;
-  height: 90vh;
-  overflow: hidden;
-  background: var(--panel);
-  padding: 1rem;
-}
+  .titlebar.expanded .titlebar-button {
+    opacity: 1; /* Show buttons only when titlebar is expanded */
+  }
 
+  .titlebar-button img {
+    width: 1.5rem;
+    height: 1.5rem;
+    filter: invert(1);
+  }
 
+  .page-wrapper {
+    padding-top: 2.5rem; /* Adjusted to account for titlebar height */
+    display: flex;
+    flex-direction: column;
+    height: 90vh;
+    overflow: hidden;
+    background: var(--panel);
+    padding: 1rem;
+  }
 </style>
