@@ -363,7 +363,8 @@
     align-items: center;
     justify-content: flex-end;
     gap: 0.25rem;
-    border-radius: 0.5rem;
+    border-bottom-right-radius: 0.5rem;
+    border-bottom-left-radius: 0.5rem;
   }
 
   .titlebar.expanded {
