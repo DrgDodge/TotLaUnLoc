@@ -135,6 +135,7 @@
   }
 
   :global(html, body) {
+    user-select: none;
     margin: 0;
     height: 100%;
     font-family: Lexend, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
