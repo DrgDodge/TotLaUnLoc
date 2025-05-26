@@ -1,5 +1,5 @@
 <div class="welcome-container">
-  <img src="/icons/lock.svg" alt="Lock icon" class="welcome-icon" />
+  <img src="/icons/lock.png" alt="Lock icon" class="welcome-icon" />
   <h1>Welcome to TotLaUnLoc</h1>
   <p>A really smart password manager and helper</p>
   <a href="/passwords" class="get-started-btn">Get Started</a>
