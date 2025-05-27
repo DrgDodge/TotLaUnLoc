@@ -842,7 +842,7 @@
   }
   @font-face {
     font-family: 'Lexend';
-    src: url('/fonts/Lexend.woff2') format('woff2');
+    src: url('/fonts/Lexend.ttf') format('ttf');
     font-weight: 400;
     font-style: normal;
   }
