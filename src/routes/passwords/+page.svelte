@@ -49,7 +49,7 @@
     'Microsoft Edge': '/icons/edge.svg',
     'Firefox': '/icons/firefox.svg',
     'Vivaldi': '/icons/vivaldi.svg',
-    'Opera Gx': '/icons/operagx.svg',
+    'Opera GX': '/icons/operagx.svg',
     'Opera': '/icons/opera.svg',
     'Chromium': '/icons/chromium.svg',
     'Brave Browser': '/icons/brave.svg'
