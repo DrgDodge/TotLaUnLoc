@@ -2,7 +2,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod passwords;
-use passwords::{passwords};
 
 mod totp;
 use totp::{add_account, delete_account, get_accounts_with_codes, AppState};
@@ -17,7 +16,7 @@ pub fn run() {
         })
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
-            passwords,
+            passwords::passwords,
             add_account,
             delete_account,
             get_accounts_with_codes

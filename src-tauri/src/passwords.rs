@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::{self, Path};
 use std::{env, fs};
 
 use chrono::{DateTime, Utc};
@@ -27,7 +27,8 @@ struct BrowserData {
 
 struct Browsers {
     name: String,
-    path: String
+    path: String,
+    root: String
 }
 
 fn webkit_to_unix_time(webkit_time: i64) -> i64 {
@@ -38,25 +39,50 @@ fn webkit_to_unix_time(webkit_time: i64) -> i64 {
 
 #[tauri::command]
 pub fn passwords() -> String {
-    let user_profile = env::var("LOCALAPPDATA").unwrap();
+    let local_appdata = env::var("LOCALAPPDATA").unwrap();
+    let roaming_appdata = env::var("APPDATA").unwrap();
     let browsers: Vec<Browsers> = vec![
         Browsers {
+            name: "Brave Browser".to_string(),
+            path: "BraveSoftware\\Brave-Browser\\User Data".to_string(),
+            root: local_appdata.to_owned()
+        },
+        Browsers {
+            name: "Chromium".to_string(),
+            path: "Chromium\\User Data".to_string(),
+            root: local_appdata.to_owned()
+        },
+        Browsers {
             name: "Google Chrome".to_string(),
-            path: "Google\\Chrome\\User Data".to_string()
+            path: "Google\\Chrome\\User Data".to_string(),
+            root: local_appdata.to_owned()
         },
         Browsers {
             name: "Microsoft Edge".to_string(),
-            path: "Microsoft\\Edge\\User Data".to_string()
+            path: "Microsoft\\Edge\\User Data".to_string(),
+            root: local_appdata.to_owned()
         },
         Browsers {
-            name: "Test Browser".to_string(),
-            path: "Test\\User Data".to_string()
+            name: "Opera".to_string(),
+            path: "\\Opera Software\\Opera Stable".to_string(),
+            root: roaming_appdata.to_owned()
+        },
+        Browsers {
+            name: "Opera GX".to_string(),
+            path: "\\Opera Software\\Opera GX Stable".to_string(),
+            root: roaming_appdata.to_owned()
+        },
+        Browsers {
+            name: "Vivaldi".to_string(),
+            path: "Vivaldi\\User Data".to_string(),
+            root: local_appdata.to_owned()
         },
     ];
-
+    println!("{:?}", env::var("APPDATA").unwrap());
+    
     let mut browser_data: Vec<BrowserData> = Vec::new();
     for browser in browsers {
-        let browser_path = Path::new(&user_profile).join(browser.path);
+        let browser_path = Path::new(&browser.root).join(browser.path);
 
         if !Path::exists(&browser_path) {
             continue;
