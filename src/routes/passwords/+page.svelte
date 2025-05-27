@@ -51,7 +51,8 @@
     'Vivaldi': '/icons/vivaldi.svg',
     'Opera Gx': '/icons/operagx.svg',
     'Opera': '/icons/opera.svg',
-    'Chromium': '/icons/chromium.svg'
+    'Chromium': '/icons/chromium.svg',
+    'Brave': '/icons/brave.svg'
   };
 
   // Stores
