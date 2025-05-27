@@ -1,4 +1,4 @@
-use std::path::{self, Path};
+use std::path::{Path};
 use std::{env, fs};
 
 use chrono::{DateTime, Utc};
