@@ -84,7 +84,8 @@
     const matches = new Set<string>();
     $selectedBrowser.profiles.forEach(profile => {
       if (profile.passwords.some(p => 
-        p.account.toLowerCase().includes($search.toLowerCase())
+        p.account.toLowerCase().includes($search.toLowerCase()) ||
+        p.username.toLowerCase().includes($search.toLowerCase())
       )) {
         matches.add(profile.name);
       }
@@ -286,7 +287,10 @@
             {#if $expandedProfiles.has(profile.name)}
               <div class="password-list" transition:slide>
                 {#each profile.passwords
-                  .filter(p => p.account.toLowerCase().includes($search.toLowerCase()))
+                  .filter(p => 
+                    p.account.toLowerCase().includes($search.toLowerCase()) ||
+                    p.username.toLowerCase().includes($search.toLowerCase())
+                  )
                   .sort((a, b) => {
                     const aVal = a[$sortKey];
                     const bVal = b[$sortKey];
@@ -1302,7 +1306,7 @@
     border: none;
     color: var(--text);
     padding: 0.75rem 1.25rem;
-    border-radius: 8px;
+    border-radius: 100px;
     cursor: pointer;
     display: flex;
     gap: 0.75rem;
@@ -1330,14 +1334,15 @@
     left: 0;
     background: #1a1a1a;
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: 20px;
     z-index: 100;
-    min-width: 200px;
+    min-width: 9rem;
     font-family: 'Lexend', sans-serif;
   }
 
   .sort-option {
     padding: 0.75rem 1rem;
+    border-radius: 20px;
     cursor: pointer;
     transition: background 0.2s ease;
     font-size: 0.95rem;
