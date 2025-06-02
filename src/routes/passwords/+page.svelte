@@ -187,6 +187,16 @@
       expandedProfiles.update(prev => new Set([...prev, browser.profiles[0].name]));
     }
   }
+
+  function deleteProfileBackend(browser: string, profile: string) {
+    invoke('delete_profile', {
+      browserName: browser,
+      profileName: profile
+    });
+
+  }
+
+
 </script>
 
 <div class="page-wrapper">
@@ -342,6 +352,8 @@
         <div class="modal-actions">
           <button on:click={() => showDeleteConfirmation.set({ profile: null })}>Cancel</button>
           <button class="confirm" on:click={() => {
+            console.log($showDeleteConfirmation.profile)
+            deleteProfileBackend($selectedBrowserName, $showDeleteConfirmation.profile?.name);
             deleteProfile($showDeleteConfirmation.profile);
             showDeleteConfirmation.set({ profile: null });
           }}>Delete</button>
