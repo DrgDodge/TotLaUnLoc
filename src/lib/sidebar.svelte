@@ -1,11 +1,7 @@
 <script lang="ts">
-    let isLoading = false;
-    let isDragging = false;
-    let isMouseOver = false;
-    let isExpanded = false;
-    let isSidebarCollapsed = false;
+    import { page } from "$app/state";
 
-    $: isExpanded = isDragging || isMouseOver;
+    let isSidebarCollapsed = false;
 
     function toggleSidebar() {
         isSidebarCollapsed = !isSidebarCollapsed;
@@ -32,7 +28,7 @@
     </button>
     <nav class="nav-list">
         <a
-            class="nav-item {globalThis.$page.url.pathname === '/passwords'
+            class="nav-item {page.url.pathname === '/passwords'
                 ? 'active'
                 : ''}"
             href="/passwords"
@@ -41,9 +37,7 @@
             <span>Passwords</span>
         </a>
         <a
-            class="nav-item {globalThis.$page.url.pathname === '/one-time-codes'
-                ? 'active'
-                : ''}"
+            class="nav-item {page.url.pathname === '/one-time-codes' ? 'active' : ''}"
             href="/one-time-codes"
         >
             <img
@@ -54,7 +48,7 @@
             <span>One-Time Codes</span>
         </a>
         <a
-            class="nav-item {globalThis.$page.url.pathname ===
+            class="nav-item {page.url.pathname ===
             '/check-passwords'
                 ? 'active'
                 : ''}"
@@ -71,7 +65,6 @@
     <button
         class="theme-btn"
         on:click={toggleTheme}
-        aria-label="Change the theme of the app"
     >
         <img class="theme-icon" src="/icons/theme.svg" alt="Change theme" />
         <span>Change Theme</span>
@@ -79,7 +72,7 @@
 </aside>
 
 <style>
-    .sidebar {
+    /* .sidebar {
         width: 240px;
         background: #191919;
         display: flex;
@@ -90,7 +83,7 @@
 
     .sidebar.collapsed {
         width: 50px;
-    }
+    } */
 
     .toggle-btn {
         position: absolute;
@@ -159,19 +152,19 @@
         filter: brightness(0) invert(1);
     }
 
-    .sidebar.collapsed .nav-item span,
+    /* .sidebar.collapsed .nav-item span,
     .sidebar.collapsed .theme-btn span {
         display: none;
-    }
+    } */
 
-    .sidebar.collapsed .nav-item {
+    /* .sidebar.collapsed .nav-item {
         justify-content: center;
         padding: 1rem;
-    }
+    } */
 
-    .sidebar.collapsed .icon {
+    /* .sidebar.collapsed .icon {
         margin: 0;
-    }
+    } */
 
     .theme-btn {
         color: white;

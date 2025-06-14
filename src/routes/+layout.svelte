@@ -2,9 +2,9 @@
   import "../app.css";
   import { beforeNavigate } from "$app/navigation";
   import { onMount } from "svelte";
-  import { getCurrentWindow } from "@tauri-apps/api/window";
   import { ModeWatcher } from "mode-watcher";
   import Sidebar from "$lib/sidebar.svelte";
+    import WindowBar from "$lib/window-bar.svelte";
 
   let isLoading = false;
   let isDragging = false;
@@ -12,7 +12,7 @@
   let isExpanded = false;
   let isSidebarCollapsed = false;
 
-  // $: isExpanded = isDragging || isMouseOver;
+  $: isExpanded = isDragging || isMouseOver;
 
   const getRandomDelay = () => Math.random() * (800 - 200) + 200;
 
@@ -23,60 +23,13 @@
   function toggleSidebar() {
     isSidebarCollapsed = !isSidebarCollapsed;
   }
-
-  const appWindow = getCurrentWindow();
-
-  function minimize() {
-    appWindow.minimize();
-  }
-
-  function close() {
-    appWindow.close();
-  }
-
-  function startDrag() {
-    appWindow.startDragging();
-  }
-
-  function handleMouseDown(event: MouseEvent) {
-    const target = event.target as HTMLElement;
-
-    if (target.closest("button")) return;
-    isDragging = true;
-    startDrag();
-
-    const handleMouseUp = () => {
-      isDragging = false;
-      window.removeEventListener("mouseup", handleMouseUp);
-    };
-
-    window.addEventListener("mouseup", handleMouseUp);
-  }
 </script>
 
 <ModeWatcher />
 <div class="app-container">
-  <!-- <div
-    class="titlebar"
-    class:expanded={isExpanded}
-    on:mouseenter={() => (isMouseOver = true)}
-    on:mouseleave={() => (isMouseOver = false)}
-    role="banner"
-    on:mousedown={handleMouseDown}
-  >
-    <button class="titlebar-button" id="titlebar-minimize" on:click={minimize}>
-      <img
-        src="https://api.iconify.design/mdi:window-minimize.svg"
-        alt="minimize"
-      />
-    </button>
-    <button class="titlebar-button" id="titlebar-close" on:click={close}>
-      <img src="https://api.iconify.design/mdi:close.svg" alt="close" />
-    </button>
-  </div> -->
-  <!-- <Sidebar /> -->
+  <WindowBar />
+  <Sidebar />
   <main class="content">
-    test
     {#if isLoading}
       <div class="loading-bar"></div>
     {:else}
@@ -87,7 +40,7 @@
   </main>
 </div>
 
-<!-- <style>
+<style>
   @font-face {
     font-family: "Lexend";
     src: url("/fonts/Lexend.ttf") format("truetype");
@@ -173,23 +126,6 @@
     animation: fadeIn 0.3s ease-in;
   }
 
-  /* .content-wrapper > * {
-    opacity: 0;
-    animation: fadeInElement 0.5s ease-in forwards;
-  }
-
-  .content-wrapper > *:nth-child(1) { animation-delay: 0s; }
-  .content-wrapper > *:nth-child(2) { animation-delay: 0.1s; }
-  .content-wrapper > *:nth-child(3) { animation-delay: 0.2s; }
-  .content-wrapper > *:nth-child(4) { animation-delay: 0.3s; }
-  .content-wrapper > *:nth-child(5) { animation-delay: 0.4s; }
-  .content-wrapper > *:nth-child(6) { animation-delay: 0.5s; }
-  .content-wrapper > *:nth-child(7) { animation-delay: 0.6s; }
-  .content-wrapper > *:nth-child(8) { animation-delay: 0.7s; }
-  .content-wrapper > *:nth-child(9) { animation-delay: 0.8s; }
-  .content-wrapper > *:nth-child(10) { animation-delay: 0.9s; }
-  .content-wrapper > *:nth-child(n + 11) { animation-delay: 1s; } */
-
   @keyframes fadeIn {
     from {
       opacity: 0;
@@ -209,49 +145,4 @@
       transform: translateY(0);
     }
   }
-
-  .titlebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 10px;
-    overflow: hidden;
-    transition: height 0.3s ease-in-out;
-    background: black;
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 0.25rem;
-    border-bottom-right-radius: 0.5rem;
-    border-bottom-left-radius: 0.5rem;
-  }
-
-  .titlebar.expanded {
-    height: 2rem;
-  }
-
-  .titlebar-button {
-    background: black;
-    border: none;
-    cursor: pointer;
-    padding: 0.25rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    outline: none;
-    opacity: 0;
-    transition: opacity 0.3s ease-in-out;
-  }
-
-  .titlebar.expanded .titlebar-button {
-    opacity: 1;
-  }
-
-  .titlebar-button img {
-    width: 1.5rem;
-    height: 1.5rem;
-    filter: invert(1);
-  }
-</style> -->
+</style>
