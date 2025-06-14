@@ -1,5 +1,9 @@
 <script lang="ts">
+    import { toggleMode } from "mode-watcher";
+
     import { page } from "$app/state";
+
+    import { Button } from "$lib/components/ui/button/index.js";
 
     let isSidebarCollapsed = false;
 
@@ -62,6 +66,9 @@
             <span>Check Passwords</span>
         </a>
     </nav>
+    <Button onclick={toggleMode}>
+        Button
+    </Button>
     <button
         class="theme-btn"
         on:click={toggleTheme}
