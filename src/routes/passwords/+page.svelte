@@ -6,6 +6,9 @@
   import { fade, fly, slide } from 'svelte/transition';
   import { flip } from 'svelte/animate';
 
+  import Topbar from '$lib/pages/passwords/topbar.svelte';
+    import TooltipContent from '$lib/components/ui/tooltip/tooltip-content.svelte';
+
   interface PasswordEntry {
     id: number;
     icon: string;
@@ -205,68 +208,7 @@
 </script>
 
 <div class="page-wrapper">
-  <!-- TOOLBAR -->
-  <!-- <div class="toolbar"> -->
-    <!-- Search -->
-    <!-- <div class="search-wrapper">
-      <img class="search-icon" src="/icons/search.svg" alt="" />
-      <input
-        type="text"
-        placeholder="Search"
-        bind:value={$search}
-        aria-label="Search accounts"
-      />
-    </div> -->
-
-    <!-- Sort Selector -->
-    <!-- <div class="sort-selector">
-      <button class="sort-button" on:click={() => showSortDropdown.update(v => !v)}>
-        {sortOptions.find(o => o.key === $sortKey && o.asc === $sortAsc)?.label}
-        <svg class="sort-arrow" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z" /></svg>
-      </button>
-      {#if $showSortDropdown}
-        <div class="sort-dropdown" use:clickOutside>
-          {#each sortOptions as option}
-            <div
-              class="sort-option {option.key === $sortKey && option.asc === $sortAsc ? 'active' : ''}"
-              on:click={() => setSort(option.key, option.asc)}
-            >
-              {option.label}
-            </div>
-          {/each}
-        </div>
-      {/if}
-    </div> -->
-
-    <!-- Browser Selector -->
-    <!-- <div class="browser-selector">
-      <div class="selected-browser" on:click={togglePopup}>
-        {#if $selectedBrowserName && browserIcons[$selectedBrowserName]}
-          <img src={browserIcons[$selectedBrowserName]} alt={$selectedBrowserName} />
-        {:else}
-          <div class="placeholder"></div>
-        {/if}
-      </div>
-      {#if showPopup}
-        <div class="popup" use:clickOutside transition:fade>
-          {#each $browserData as browser, i (browser.name)}
-            <img
-              src={browserIcons[browser.name] || '/icons/default.svg'}
-              alt={browser.name}
-              class:selected={browser.name === $selectedBrowserName}
-              on:click={() => {
-                selectedBrowserName.set(browser.name);
-                showPopup = false;
-              }}
-              in:fly={{ y: -20, duration: 250, delay: i * 50 }}
-              out:fly={{ y: 20, duration: 250 }}
-              animate:flip
-            />
-          {/each}
-        </div>
-      {/if}
-    </div>
-  </div> -->
+  <Topbar />
 
   <!-- MAIN CONTENT -->
   <!-- {#if $status === 'loading'}
@@ -279,9 +221,9 @@
     {#if $selectedBrowser && $selectedBrowser.profiles.length}
       <div class="profile-list">
         {#each $selectedBrowser.profiles as profile (profile.name)}
-          <div class="profile-item"> -->
-            <!-- Profile Header -->
-            <!-- <div class="profile-header" on:click={() => toggleProfile(profile.name)}>
+          <div class="profile-item">
+            
+            <div class="profile-header" on:click={() => toggleProfile(profile.name)}>
               <div class="profile-name">
                 {profile.name} ({profile.passwords.length})
               </div>
@@ -304,13 +246,8 @@
                   }
                   aria-label="Delete profile"
                 >
-                sa moara mama ca nu merge svg asta -->
-                  <!-- <svg viewBox="0 0 24 24">
-                    <path
-                      d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
-                    />
-                  </svg> -->
-                <!-- </button>
+                sa moara mama ca nu merge svg asta
+                </button>
               </div>
             </div>
 
@@ -348,9 +285,9 @@
                       {:else}
                         {Math.floor(password.lastChangeDays / 365)} years ago
                       {/if}
-                    </div> -->
-                    <!-- MANAGE BUTTON -->
-                    <!-- <a
+                    </div>
+                    
+                    <a
                       href={password.url}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -372,7 +309,7 @@
   {/if} -->
 
   <!-- DELETE CONFIRMATION MODAL -->
-  <!-- {#if $showDeleteConfirmation.profile}
+  {#if $showDeleteConfirmation.profile}
     <div class="confirmation-modal">
       <div class="modal-content">
         <h3>Confirm Delete</h3>
@@ -390,7 +327,7 @@
         </div>
       </div>
     </div>
-  {/if} -->
+  {/if}
 </div>
 
 <style>

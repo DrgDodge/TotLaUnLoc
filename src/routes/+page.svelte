@@ -1,6 +1,19 @@
-<div class="flex flex-col items-center justify-center h-full text-center">
-  <img src="/icons/lock.png" alt="Lock icon" class="w-16 h-16 mb-4" />
-  <h1 class="mb-2">Welcome to TotLaUnLoc</h1>
-  <p class="text-xl mb-8">A really smart password manager and helper</p>
-  <a href="/passwords" class="bg-gray-800 text-gray-300 rounded-md no-underline text-base font-semibold hover:bg-gray-700" >Get Started</a>
+<script lang="ts">
+  import Button from "$lib/components/ui/button/button.svelte"
+
+</script>
+
+<div class="flex flex-col justify-center items-center h-11/12 bg-background">
+  <div class="text-center">
+    <div class="flex items-center justify-center pb-12">
+      <img src="/icons/lock.png" alt="Lock icon" class="size-24" />
+
+    </div>
+    <h1 class="font-bold text-3xl pb-3">Welcome to TotLaUnLoc</h1>
+    <p class="">A really smart password manager and helper</p>
+    
+    <Button variant="outline" class="mt-12 w-1/2">
+      <a href="/passwords">Get started</a>
+    </Button>
+  </div>
 </div>
