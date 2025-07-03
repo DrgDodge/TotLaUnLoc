@@ -100,7 +100,7 @@
       />
     </button>
     <nav class="nav-list">
-      <img src="/icons/Logoo.png" alt="Welcome icon" class="welcome-icon" />
+      <a class="nav-item" href="/"><img  src="/icons/Logoo.png" alt="Welcome icon" class="welcome-icon" /></a>
       <a class="nav-item { page.url.pathname === '/passwords' ? 'active' : '' }" href="/passwords">
         <img class="icon" src="/icons/key.svg" alt="Passwords icon" />
         <span>Passwords</span>
