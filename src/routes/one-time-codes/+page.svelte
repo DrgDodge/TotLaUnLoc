@@ -164,8 +164,6 @@ const code = secret
   });
 </script>
 
-
-
 <div class="page-wrapper">
   <div class="toolbar">
     <div class="search-wrapper">
@@ -173,7 +171,7 @@ const code = secret
       <input
         type="text"
         placeholder="Search"
-        bind:value={$search}
+        bind:value={search}
       />
     </div>
     {#if showInput}
@@ -182,17 +180,17 @@ const code = secret
           type="text"
           placeholder="Enter otpauth URL (e.g., otpauth://totp/user?secret=XXX&issuer=Service)"
           bind:value={otpauthInput}
-          on:keydown={(e) => e.key === 'Enter' && addAccount()}
+          onkeydown={(e) => e.key === 'Enter' && addAccount()}
         />
-        <button class="submit-btn" on:click={addAccount}>
+        <button class="submit-btn" onclick={addAccount}>
           <img src="/icons/check.svg" alt="Submit" />
         </button>
-        <button class="cancel-btn" on:click={cancelAdd}>
+        <button class="cancel-btn" onclick={cancelAdd}>
           <img src="/icons/x.svg" alt="Cancel" />
         </button>
       </div>
     {:else}
-      <button class="add-button" on:click={() => (showInput = true)}>
+      <button class="add-button" onclick={() => (showInput = true)}>
         <img src="/icons/add.svg" alt="Add Account" />
       </button>
     {/if}
@@ -215,16 +213,16 @@ const code = secret
         </tr>
       </thead>
       <tbody>
-        {#each $filtered as e}
+        {#each filtered as e}
           <tr>
             <td class="account-cell">
-              <img src={e.icon} alt={e.account} on:error={(e) => e.target.src = '/icons/default.svg'} />
+              <img src={e.icon} alt={e.account} onerror={(e) => (e.target as HTMLImageElement).src = '/icons/default.svg'} />
               {e.account}
             </td>
             <td>{e.username}</td>
             <td class="code">{e.code.slice(0,3)} {e.code.slice(3)}</td>
             <td>
-              <button class="delete-btn" on:click={() => deleteAccount(e.id)} aria-label="Delete account for {e.account}">
+              <button class="delete-btn" onclick={() => deleteAccount(e.id)} aria-label="Delete account for {e.account}">
                 <img class="delete-icon" src="/icons/trash.svg" alt="Delete" />
               </button>
             </td>
