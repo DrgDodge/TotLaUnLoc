@@ -1,41 +1,14 @@
 use std::path::Path;
 use std::{env, fs};
 
-use chrono::{DateTime, Utc};
+use chrono::DateTime;
 use rusqlite::Connection;
-use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
-struct Passwords {
-    url: String,
-    username: String,
-    date_created: DateTime<Utc>,
-    date_modified: DateTime<Utc>,
-}
+pub mod types;
+pub mod utils;
 
-#[derive(Serialize, Deserialize)]
-struct ProfileData {
-    profile_name: String,
-    passwords: Vec<Passwords>,
-}
-
-#[derive(Serialize, Deserialize)]
-struct BrowserData {
-    browser: String,
-    profiles: Vec<ProfileData>,
-}
-
-struct Browsers {
-    name: String,
-    path: String,
-    root: String,
-}
-
-fn webkit_to_unix_time(webkit_time: i64) -> i64 {
-    let seconds_between19701601 = 11644473600;
-
-    return webkit_time / 1000000 - seconds_between19701601;
-}
+use types::{BrowserData, Browsers, Passwords, ProfileData};
+use utils::webkit_to_unix_time;
 
 #[tauri::command]
 pub fn passwords() -> String {
@@ -44,37 +17,37 @@ pub fn passwords() -> String {
     let browsers: Vec<Browsers> = vec![
         Browsers {
             name: "Brave Browser".to_string(),
-            path: "BraveSoftware\\Brave-Browser\\User Data".to_string(),
+            path: "BraveSoftware/Brave-Browser/User Data".to_string(),
             root: local_appdata.to_owned(),
         },
         Browsers {
             name: "Chromium".to_string(),
-            path: "Chromium\\User Data".to_string(),
+            path: "Chromium/User Data".to_string(),
             root: local_appdata.to_owned(),
         },
         Browsers {
             name: "Google Chrome".to_string(),
-            path: "Google\\Chrome\\User Data".to_string(),
+            path: "Google/Chrome/User Data".to_string(),
             root: local_appdata.to_owned(),
         },
         Browsers {
             name: "Microsoft Edge".to_string(),
-            path: "Microsoft\\Edge\\User Data".to_string(),
+            path: "Microsoft/Edge/User Data".to_string(),
             root: local_appdata.to_owned(),
         },
         Browsers {
             name: "Opera".to_string(),
-            path: "Opera Software\\Opera Stable".to_string(),
+            path: "Opera Software/Opera Stable".to_string(),
             root: roaming_appdata.to_owned(),
         },
         Browsers {
             name: "Opera GX".to_string(),
-            path: "Opera Software\\Opera GX Stable".to_string(),
+            path: "Opera Software/Opera GX Stable".to_string(),
             root: roaming_appdata.to_owned(),
         },
         Browsers {
             name: "Vivaldi".to_string(),
-            path: "Vivaldi\\User Data".to_string(),
+            path: "Vivaldi/User Data".to_string(),
             root: local_appdata.to_owned(),
         },
     ];
