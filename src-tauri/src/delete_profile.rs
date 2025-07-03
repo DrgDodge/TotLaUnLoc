@@ -7,7 +7,7 @@ struct Browsers {
 }
 
 #[tauri::command]
-pub fn delete_profile(browser_name: String, profile_name: String) {
+pub fn delete_profile(browser_name: String, _profile_name: String) {
     let local_appdata = env::var("LOCALAPPDATA").unwrap();
     let roaming_appdata = env::var("APPDATA").unwrap();
     let browsers: Vec<Browsers> = vec![
