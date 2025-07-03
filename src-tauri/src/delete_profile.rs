@@ -60,7 +60,5 @@ pub fn delete_profile(browser_name: String, _profile_name: String) {
         let profiles = json["profile"]["info_cache"].as_array();
 
         println!("{:?}", profiles)
-
     };
-
 }

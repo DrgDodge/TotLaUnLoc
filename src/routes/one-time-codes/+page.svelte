@@ -1,28 +1,33 @@
 <script lang="ts">
   import { writable, derived } from 'svelte/store';
   import { onMount } from 'svelte';
-  import { invoke } from '@tauri-apps/api/core';
-  import { fade, slide } from 'svelte/transition';
+  import { load } from '@tauri-apps/plugin-store';
+import * as OTPAuth from 'otpauth';
+    import { fade, slide } from 'svelte/transition';
+      import { invoke } from '@tauri-apps/api/core';
+      import { Buffer } from 'buffer';
+(globalThis as any).Buffer = Buffer;
+
 
   interface Entry {
     id: number;
-    icon: string;
     account: string;
     username: string;
+    icon: string;
     code: string;
   }
 
-  // Function to normalize account name into a domain
-  function getDomain(account: string): string {
-    const normalized = account.toLowerCase().replace(/\s+/g, '');
-    try {
-      const url = normalized.startsWith('http') ? normalized : `https://${normalized}`;
-      const { hostname } = new URL(url);
-      return hostname.replace(/^www\./, '');
-    } catch (e) {
-      return normalized;
-    }
+  interface StoredAccount {
+    id: number;
+    otpauth: string;
   }
+
+  interface StoreData {
+    nextId: number;
+    accounts: StoredAccount[];
+  }
+
+  let store: Awaited<ReturnType<typeof load>>;
 
   const entries = writable<Entry[]>([]);
   const search = writable('');
@@ -38,43 +43,103 @@
       )
   );
 
+  function getDomain(account: string): string {
+    const normalized = account.toLowerCase().replace(/\s+/g, '');
+    try {
+      const url = normalized.startsWith('http') ? normalized : `https://${normalized}`;
+      const { hostname } = new URL(url);
+      return hostname.replace(/^www\./, '');
+    } catch (e) {
+      return normalized;
+    }
+  }
+
+  function parseOtpauth(otpauth: string): { account: string; username: string; secret: string } {
+  try {
+    const match = otpauth.match(/^otpauth:\/\/totp\/([^?]+)\??(.*)$/i);
+    if (!match) throw new Error('Invalid otpauth URL');
+
+    const label = decodeURIComponent(match[1]); // "issuer:user" or just "user"
+    const query = new URLSearchParams(match[2]);
+    const secret = query.get('secret') ?? '';
+    const issuer = query.get('issuer');
+
+    // If label includes "issuer:username", split it.
+    if (label.includes(':')) {
+      const [labelIssuer, username] = label.split(':');
+      return { account: issuer || labelIssuer, username, secret };
+    }
+
+    // Otherwise just treat label as username
+    return { account: issuer ?? label, username: label, secret };
+  } catch (e) {
+    console.error('Invalid otpauth:', otpauth, e);
+    return { account: 'Invalid', username: 'Invalid', secret: '' };
+  }
+}
+
+function cancelAdd() {
+  otpauthInput = '';
+  showInput = false;
+}
+
+
   async function fetchCodes() {
     try {
-      const accounts: Entry[] = await invoke('get_accounts_with_codes');
-      const processedAccounts = accounts.map(account => {
-        const domain = getDomain(account.account);
-        const icon = `https://${domain}/favicon.ico`;
-        return { ...account, icon };
-      });
-      entries.set(processedAccounts);
+      const state = await store.get<StoreData>('totp_accounts') ?? { nextId: 0, accounts: [] };
       const now = Math.floor(Date.now() / 1000);
       remaining = 30 - (now % 30);
+
+      const updated = state.accounts.map(({ id, otpauth }) => {
+        const { account, username, secret } = parseOtpauth(otpauth);
+const code = secret
+  ? new OTPAuth.TOTP({ secret }).generate()
+  : '------';
+
+        const domain = getDomain(account);
+        const icon = `https://${domain}/favicon.ico`;
+        return { id, icon, account, username, code };
+      });
+
+      entries.set(updated);
     } catch (error) {
-      console.error('Failed to fetch codes:', error);
+      console.error('Failed to load codes:', error);
     }
   }
 
   async function addAccount() {
-    if (otpauthInput) {
-      try {
-        await invoke('add_account', { otpauth: otpauthInput });
-        otpauthInput = '';
-        showInput = false;
-        await fetchCodes();
-      } catch (error) {
-        alert('Failed to add account: ' + error);
-      }
+    if (!otpauthInput || !otpauthInput.startsWith('otpauth://')) {
+      alert('Invalid otpauth URL.');
+      return;
     }
-  }
 
-  function cancelAdd() {
-    otpauthInput = '';
-    showInput = false;
+    try {
+      let state = await store.get<StoreData>('totp_accounts');
+      if (!state) state = { nextId: 0, accounts: [] };
+
+      const newId = state.nextId++;
+      state.accounts.push({ id: newId, otpauth: otpauthInput });
+
+      await store.set('totp_accounts', state);
+      await store.save();
+
+      otpauthInput = '';
+      showInput = false;
+      await fetchCodes();
+    } catch (error) {
+      alert('Failed to add account: ' + error);
+    }
   }
 
   async function deleteAccount(id: number) {
     try {
-      await invoke('delete_account', { id });
+      let state = await store.get<StoreData>('totp_accounts');
+      if (!state) return;
+
+      state.accounts = state.accounts.filter(acc => acc.id !== id);
+      await store.set('totp_accounts', state);
+      await store.save();
+
       await fetchCodes();
     } catch (error) {
       alert('Failed to delete account: ' + error);
@@ -82,17 +147,24 @@
   }
 
   onMount(() => {
-    fetchCodes();
-    const interval = setInterval(() => {
-      remaining -= 1;
-      if (remaining <= 0) {
-        remaining = 30;
-        fetchCodes();
-      }
-    }, 1000);
-    return () => clearInterval(interval);
+    (async () => {
+      store = await load('store.json', { autoSave: false });
+      await fetchCodes();
+
+      const interval = setInterval(() => {
+        remaining -= 1;
+        if (remaining <= 0) {
+          remaining = 30;
+          fetchCodes();
+        }
+      }, 1000);
+
+      return () => clearInterval(interval);
+    })();
   });
 </script>
+
+
 
 <div class="page-wrapper">
   <div class="toolbar">

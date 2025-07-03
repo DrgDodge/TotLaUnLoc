@@ -2,10 +2,10 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod delete_profile;
-use delete_profile::{delete_profile};
+use delete_profile::delete_profile;
 
 mod passwords;
-use passwords::{passwords};
+use passwords::passwords;
 
 mod totp;
 use totp::{add_account, delete_account, get_accounts_with_codes, AppState};
@@ -14,6 +14,7 @@ use std::sync::Mutex;
 
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_store::Builder::new().build())
         .manage(AppState {
             accounts: Mutex::new(vec![]),
             next_id: Mutex::new(0),
