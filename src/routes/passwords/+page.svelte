@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { writable, derived } from 'svelte/store';
   import { invoke } from '@tauri-apps/api/core';
   import { open } from '@tauri-apps/plugin-shell';
   import { fade, fly, slide } from 'svelte/transition';
@@ -205,191 +204,72 @@
 </script>
 
 <div class="page-wrapper">
-  <!-- TOOLBAR -->
   <div class="toolbar">
-    <!-- Search -->
     <div class="search-wrapper">
       <img class="search-icon" src="/icons/search.svg" alt="" />
       <input
         type="text"
         placeholder="Search"
-        bind:value={$search}
-        aria-label="Search accounts"
+        bind:value={search}
       />
     </div>
-
-    <!-- Sort Selector -->
-    <div class="sort-selector">
-      <button class="sort-button" on:click={() => showSortDropdown.update(v => !v)}>
-        {sortOptions.find(o => o.key === $sortKey && o.asc === $sortAsc)?.label}
-        <svg class="sort-arrow" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z" /></svg>
-      </button>
-      {#if $showSortDropdown}
-        <div class="sort-dropdown" use:clickOutside>
-          {#each sortOptions as option}
-            <div
-              class="sort-option {option.key === $sortKey && option.asc === $sortAsc ? 'active' : ''}"
-              on:click={() => setSort(option.key, option.asc)}
-            >
-              {option.label}
-            </div>
-          {/each}
-        </div>
-      {/if}
-    </div>
-
-    <!-- Browser Selector -->
-    <div class="browser-selector">
-      <div class="selected-browser" on:click={togglePopup}>
-        {#if $selectedBrowserName && browserIcons[$selectedBrowserName]}
-          <img src={browserIcons[$selectedBrowserName]} alt={$selectedBrowserName} />
-        {:else}
-          <div class="placeholder"></div>
-        {/if}
+    {#if showInput}
+      <div class="input-wrapper" transition:slide={{ duration: 300 }}>
+        <input
+          type="text"
+          placeholder="Enter otpauth URL (e.g., otpauth://totp/user?secret=XXX&issuer=Service)"
+          bind:value={otpauthInput}
+          onkeydown={(e) => e.key === 'Enter' && addAccount()}
+        />
+        <button class="submit-btn" onclick={addAccount}>
+          <img src="/icons/check.svg" alt="Submit" />
+        </button>
+        <button class="cancel-btn" onclick={cancelAdd}>
+          <img src="/icons/x.svg" alt="Cancel" />
+        </button>
       </div>
-      {#if showPopup}
-        <div class="popup" use:clickOutside transition:fade>
-          {#each $browserData as browser, i (browser.name)}
-            <img
-              src={browserIcons[browser.name] || '/icons/default.svg'}
-              alt={browser.name}
-              class:selected={browser.name === $selectedBrowserName}
-              on:click={() => {
-                selectedBrowserName.set(browser.name);
-                showPopup = false;
-              }}
-              in:fly={{ y: -20, duration: 250, delay: i * 50 }}
-              out:fly={{ y: 20, duration: 250 }}
-              animate:flip
-            />
-          {/each}
-        </div>
-      {/if}
+    {:else}
+      <button class="add-button" onclick={() => (showInput = true)}>
+        <img src="/icons/add.svg" alt="Add Account" />
+      </button>
+    {/if}
+    <div class="countdown-wrapper">
+      <svg width="40" height="40" viewBox="0 0 40 40">
+        <circle cx="20" cy="20" r="16" stroke="var(--muted)" stroke-width="4" fill="none" />
+        <circle cx="20" cy="20" r="16" stroke="var(--text)" stroke-width="4" fill="none"
+          stroke-dasharray="100.53" stroke-dashoffset={ (30 - remaining) / 30 * 100.53 } />
+      </svg>
     </div>
   </div>
-
-  <!-- MAIN CONTENT -->
-  {#if $status === 'loading'}
-    <div class="status-message">Loading...</div>
-  {:else if $status === 'error'}
-    <div class="status-message error">Failed to load passwords.</div>
-  {:else if $status === 'empty'}
-    <div class="status-message">No browsers found.</div>
-  {:else}
-    {#if $selectedBrowser && $selectedBrowser.profiles.length}
-      <div class="profile-list">
-        {#each $selectedBrowser.profiles as profile (profile.name)}
-          <div class="profile-item">
-            <!-- Profile Header -->
-            <div class="profile-header" on:click={() => toggleProfile(profile.name)}>
-              <div class="profile-name">
-                {profile.name} ({profile.passwords.length})
-              </div>
-              <div class="profile-actions">
-                <button
-                  class="arrow-button"
-                  on:click|stopPropagation={() => toggleProfile(profile.name)}
-                  aria-label={$expandedProfiles.has(profile.name) ? 'Collapse' : 'Expand'}
-                >
-                  {#if $expandedProfiles.has(profile.name)}
-                    <svg class="arrow" viewBox="0 0 24 24"><path d="M7 14l5-5 5 5z" /></svg>
-                  {:else}
-                    <svg class="arrow" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z" /></svg>
-                  {/if}
-                </button>
-                <button
-                  class="delete-button"
-                  on:click|stopPropagation={() =>
-                    showDeleteConfirmation.set({ profile })
-                  }
-                  aria-label="Delete profile"
-                >
-                  <svg viewBox="0 0 24 24">
-                    <path
-                      d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            {#if $expandedProfiles.has(profile.name)}
-              <div class="password-list" transition:slide>
-                {#each profile.passwords
-                  .filter(
-                    p =>
-                      p.account.toLowerCase().includes($search.toLowerCase()) ||
-                      p.username.toLowerCase().includes($search.toLowerCase())
-                  )
-                  .sort((a, b) => {
-                    const order = $sortAsc ? 1 : -1;
-                    const aVal = a[$sortKey];
-                    const bVal = b[$sortKey];
-                    if (typeof aVal === 'string')
-                      return (aVal as string).localeCompare(bVal as string) * order;
-                    return (aVal > bVal ? 1 : -1) * order;
-                  }) as password}
-                  <div class="password-item">
-                    <img
-                      src={password.icon}
-                      alt={password.account}
-                      on:error={e => (e.target.src = '/icons/default.svg')}
-                    />
-                    <div class="password-details">
-                      <div class="account">{password.account}</div>
-                      <div class="username">{password.username}</div>
-                    </div>
-                    <div class="password-age">
-                      {#if password.lastChangeDays < 30}
-                        {password.lastChangeDays} days ago
-                      {:else if password.lastChangeDays < 365}
-                        {Math.floor(password.lastChangeDays / 30)} months ago
-                      {:else}
-                        {Math.floor(password.lastChangeDays / 365)} years ago
-                      {/if}
-                    </div>
-                    <!-- MANAGE BUTTON -->
-                    <a
-                      href={password.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="manage-btn"
-                      aria-label={`Manage ${password.account}`}
-                    >
-                      <img src="/icons/arrow.svg" alt="" />
-                    </a>
-                  </div>
-                {/each}
-              </div>
-            {/if}
-          </div>
+  <div class="table-wrapper">
+    <table class="entries">
+      <thead>
+        <tr>
+          <th>Account</th>
+          <th>Username</th>
+          <th>Code</th>
+          <th aria-hidden="true"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {#each filtered as e}
+          <tr>
+            <td class="account-cell">
+              <img src={e.icon} alt={e.account} onerror={(e) => (e.target as HTMLImageElement).src = '/icons/default.svg'} />
+              {e.account}
+            </td>
+            <td>{e.username}</td>
+            <td class="code">{e.code.slice(0,3)} {e.code.slice(3)}</td>
+            <td>
+              <button class="delete-btn" onclick={() => deleteAccount(e.id)} aria-label="Delete account for {e.account}">
+                <img class="delete-icon" src="/icons/trash.svg" alt="Delete" />
+              </button>
+            </td>
+          </tr>
         {/each}
-      </div>
-    {:else if $selectedBrowser}
-      <p class="status-message">No profiles found for this browser.</p>
-    {/if}
-  {/if}
-
-  <!-- DELETE CONFIRMATION MODAL -->
-  {#if $showDeleteConfirmation.profile}
-    <div class="confirmation-modal">
-      <div class="modal-content">
-        <h3>Confirm Delete</h3>
-        <p>
-          Are you sure you want to delete profile "{$showDeleteConfirmation.profile.name}" and
-          all its passwords?
-        </p>
-        <div class="modal-actions">
-          <button on:click={() => showDeleteConfirmation.set({ profile: null })}>Cancel</button>
-          <button class="confirm" on:click={() => {
-            deleteProfileBackend($selectedBrowserName, $showDeleteConfirmation.profile?.name);
-            deleteProfile($showDeleteConfirmation.profile);
-            showDeleteConfirmation.set({ profile: null });
-          }}>Delete</button>
-        </div>
-      </div>
-    </div>
-  {/if}
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <style>
