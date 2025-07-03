@@ -56,15 +56,15 @@
   };
 
   // Stores
-  const browserData = writable<Browser[]>([]);
-  const selectedBrowserName = writable<string | null>(null);
-  const search = writable('');
-  const status = writable<'loading' | 'success' | 'empty' | 'error'>('loading');
-  const expandedProfiles = writable<Set<string>>(new Set());
-  const showDeleteConfirmation = writable<{ profile: Profile | null }>({ profile: null });
-  const sortKey = writable<keyof PasswordEntry>('account');
-  const sortAsc = writable(true);
-  const showSortDropdown = writable(false);
+  let browserData = $state<Browser[]>([]);
+  let selectedBrowserName = $state<string | null>(null);
+  let search = $state('');
+  let status = $state<'loading' | 'success' | 'empty' | 'error'>('loading');
+  let expandedProfiles = $state<Set<string>>(new Set());
+  let showDeleteConfirmation = $state<{ profile: Profile | null }>({ profile: null });
+  let sortKey = $state<keyof PasswordEntry>('account');
+  let sortAsc = $state(true);
+  let showSortDropdown = $state(false);
 
   // Sort options
   const sortOptions = [
@@ -75,53 +75,48 @@
   ];
 
   // Derived stores
-  const selectedBrowser = derived(
-    [browserData, selectedBrowserName],
-    ([$browserData, $selectedBrowserName]) =>
-      $browserData.find(b => b.name === $selectedBrowserName) || null
+  let selectedBrowser = $derived(
+    browserData.find(b => b.name === selectedBrowserName) || null
   );
 
-  // Auto-expand profiles with search matches
-  $: if ($search && $selectedBrowser) {
-    const matches = new Set<string>();
-    $selectedBrowser.profiles.forEach(profile => {
-      if (
-        profile.passwords.some(
-          p =>
-            p.account.toLowerCase().includes($search.toLowerCase()) ||
-            p.username.toLowerCase().includes($search.toLowerCase())
-        )
-      ) {
-        matches.add(profile.name);
-      }
-    });
-    expandedProfiles.update(prev => new Set([...prev, ...matches]));
-  }
+  $effect(() => {
+    if (search && selectedBrowser) {
+      const matches = new Set<string>();
+      selectedBrowser.profiles.forEach(profile => {
+        if (
+          profile.passwords.some(
+            p =>
+              p.account.toLowerCase().includes(search.toLowerCase()) ||
+              p.username.toLowerCase().includes(search.toLowerCase())
+          )
+        ) {
+          matches.add(profile.name);
+        }
+      });
+      expandedProfiles = new Set([...expandedProfiles, ...matches]);
+    }
+  });
 
   function toggleProfile(profileName: string) {
-    expandedProfiles.update(prev => {
-      const next = new Set(prev);
-      next.has(profileName) ? next.delete(profileName) : next.add(profileName);
-      return next;
-    });
+    const next = new Set(expandedProfiles);
+    next.has(profileName) ? next.delete(profileName) : next.add(profileName);
+    expandedProfiles = next;
   }
 
   async function deleteProfile(profile: Profile) {
     if (confirm(`Are you sure you want to delete all passwords in profile "${profile.name}"?`)) {
-      browserData.update(browsers =>
-        browsers.map(browser =>
-          browser.name === $selectedBrowserName
-            ? { ...browser, profiles: browser.profiles.filter(p => p.name !== profile.name) }
-            : browser
-        )
+      browserData = browserData.map(browser =>
+        browser.name === selectedBrowserName
+          ? { ...browser, profiles: browser.profiles.filter(p => p.name !== profile.name) }
+          : browser
       );
     }
   }
 
   function setSort(key: keyof PasswordEntry, asc: boolean) {
-    sortKey.set(key);
-    sortAsc.set(asc);
-    showSortDropdown.set(false);
+    sortKey = key;
+    sortAsc = asc;
+    showSortDropdown = false;
   }
 
   // Open external URL via Tauri shell API
@@ -129,7 +124,7 @@
     open(url).catch(console.error);
   }
 
-  let showPopup = false;
+  let showPopup = $state(false);
   function togglePopup() {
     showPopup = !showPopup;
   }
@@ -138,7 +133,7 @@
     const handleClick = (event: MouseEvent) => {
       if (!node.contains(event.target as Node)) {
         showPopup = false;
-        showSortDropdown.set(false);
+        showSortDropdown = false;
       }
     };
     document.addEventListener('click', handleClick, true);
@@ -152,7 +147,7 @@
   onMount(async () => {
     try {
       const jsonData: string = await invoke('passwords');
-      const raw = JSON.parse(jsonData);
+      const raw: any[] = JSON.parse(jsonData);
       let idCounter = 1;
       const now = Date.now();
       const browsers: Browser[] = raw.map((b: any) => ({
@@ -176,21 +171,23 @@
           })
         }))
       }));
-      browserData.set(browsers);
-      if (browsers.length) selectedBrowserName.set(browsers[0].name);
-      status.set(browsers.length ? 'success' : 'empty');
+      browserData = browsers;
+      if (browsers.length) selectedBrowserName = browsers[0].name;
+      status = browsers.length ? 'success' : 'empty';
     } catch (e) {
       console.error(e);
-      status.set('error');
+      status = 'error';
     }
   });
 
-  $: if ($selectedBrowserName && $browserData) {
-    const browser = $browserData.find(b => b.name === $selectedBrowserName);
-    if (browser?.profiles.length) {
-      expandedProfiles.update(prev => new Set([...prev, browser.profiles[0].name]));
+  $effect(() => {
+    if (selectedBrowserName && browserData) {
+      const browser = browserData.find(b => b.name === selectedBrowserName);
+      if (browser?.profiles.length) {
+        expandedProfiles = new Set([...expandedProfiles, browser.profiles[0].name]);
+      }
     }
-  }
+  });
 
   function deleteProfileBackend(browser: string, profile: string) {
     invoke('delete_profile', {
@@ -204,79 +201,208 @@
 </script>
 
 <div class="page-wrapper">
+  <!-- TOOLBAR -->
   <div class="toolbar">
+    <!-- Search -->
     <div class="search-wrapper">
       <img class="search-icon" src="/icons/search.svg" alt="" />
       <input
         type="text"
         placeholder="Search"
         bind:value={search}
+        aria-label="Search accounts"
       />
     </div>
-    {#if showInput}
-      <div class="input-wrapper" transition:slide={{ duration: 300 }}>
-        <input
-          type="text"
-          placeholder="Enter otpauth URL (e.g., otpauth://totp/user?secret=XXX&issuer=Service)"
-          bind:value={otpauthInput}
-          onkeydown={(e) => e.key === 'Enter' && addAccount()}
-        />
-        <button class="submit-btn" onclick={addAccount}>
-          <img src="/icons/check.svg" alt="Submit" />
-        </button>
-        <button class="cancel-btn" onclick={cancelAdd}>
-          <img src="/icons/x.svg" alt="Cancel" />
-        </button>
-      </div>
-    {:else}
-      <button class="add-button" onclick={() => (showInput = true)}>
-        <img src="/icons/add.svg" alt="Add Account" />
+
+    <!-- Sort Selector -->
+    <div class="sort-selector">
+      <button class="sort-button" onclick={() => showSortDropdown = !showSortDropdown}>
+        {sortOptions.find(o => o.key === sortKey && o.asc === sortAsc)?.label}
+        <svg class="sort-arrow" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z" /></svg>
       </button>
-    {/if}
-    <div class="countdown-wrapper">
-      <svg width="40" height="40" viewBox="0 0 40 40">
-        <circle cx="20" cy="20" r="16" stroke="var(--muted)" stroke-width="4" fill="none" />
-        <circle cx="20" cy="20" r="16" stroke="var(--text)" stroke-width="4" fill="none"
-          stroke-dasharray="100.53" stroke-dashoffset={ (30 - remaining) / 30 * 100.53 } />
-      </svg>
+      {#if showSortDropdown}
+        <div class="sort-dropdown" use:clickOutside>
+          {#each sortOptions as option}
+            <div
+              class="sort-option {option.key === sortKey && option.asc === sortAsc ? 'active' : ''}"
+              onclick={() => setSort(option.key as keyof PasswordEntry, option.asc)}
+              onkeydown={(e) => e.key === 'Enter' && setSort(option.key as keyof PasswordEntry, option.asc)}
+              role="button"
+              tabindex="0"
+            >
+              {option.label}
+            </div>
+          {/each}
+        </div>
+      {/if}
+    </div>
+
+    <!-- Browser Selector -->
+    <div class="browser-selector">
+      <div class="selected-browser" onclick={togglePopup} onkeydown={(e) => e.key === 'Enter' && togglePopup()} role="button" tabindex="0">
+        {#if selectedBrowserName && browserIcons[selectedBrowserName]}
+          <img src={browserIcons[selectedBrowserName]} alt={selectedBrowserName} />
+        {:else}
+          <div class="placeholder"></div>
+        {/if}
+      </div>
+      {#if showPopup}
+        <div class="popup" use:clickOutside transition:fade>
+          {#each browserData as browser, i (browser.name)}
+            <button
+              class="browser-icon-button"
+              class:selected={browser.name === selectedBrowserName}
+              onclick={() => {
+                selectedBrowserName = browser.name;
+                showPopup = false;
+              }}
+              onkeydown={(e) => e.key === 'Enter' && (selectedBrowserName = browser.name, showPopup = false)}
+              in:fly={{ y: -20, duration: 250, delay: i * 50 }}
+              out:fly={{ y: 20, duration: 250 }}
+              animate:flip
+            >
+              <img
+                src={browserIcons[browser.name] || '/icons/default.svg'}
+                alt={browser.name}
+              />
+            </button>
+          {/each}
+        </div>
+      {/if}
     </div>
   </div>
-  <div class="table-wrapper">
-    <table class="entries">
-      <thead>
-        <tr>
-          <th>Account</th>
-          <th>Username</th>
-          <th>Code</th>
-          <th aria-hidden="true"></th>
-        </tr>
-      </thead>
-      <tbody>
-        {#each filtered as e}
-          <tr>
-            <td class="account-cell">
-              <img src={e.icon} alt={e.account} onerror={(e) => (e.target as HTMLImageElement).src = '/icons/default.svg'} />
-              {e.account}
-            </td>
-            <td>{e.username}</td>
-            <td class="code">{e.code.slice(0,3)} {e.code.slice(3)}</td>
-            <td>
-              <button class="delete-btn" onclick={() => deleteAccount(e.id)} aria-label="Delete account for {e.account}">
-                <img class="delete-icon" src="/icons/trash.svg" alt="Delete" />
-              </button>
-            </td>
-          </tr>
+
+  <!-- MAIN CONTENT -->
+  {#if status === 'loading'}
+    <div class="status-message">Loading...</div>
+  {:else if status === 'error'}
+    <div class="status-message error">Failed to load passwords.</div>
+  {:else if status === 'empty'}
+    <div class="status-message">No browsers found.</div>
+  {:else}
+    {#if selectedBrowser && selectedBrowser.profiles.length}
+      <div class="profile-list">
+        {#each selectedBrowser.profiles as profile (profile.name)}
+          <div class="profile-item">
+            <!-- Profile Header -->
+            <div class="profile-header" onclick={() => toggleProfile(profile.name)} onkeydown={(e) => e.key === 'Enter' && toggleProfile(profile.name)} role="button" tabindex="0">
+              <div class="profile-name">
+                {profile.name} ({profile.passwords.length})
+              </div>
+              <div class="profile-actions">
+                <button
+                  class="arrow-button"
+                  onclick={(e) => { e.stopPropagation(); toggleProfile(profile.name)}}
+                  aria-label={expandedProfiles.has(profile.name) ? 'Collapse' : 'Expand'}
+                >
+                  {#if expandedProfiles.has(profile.name)}
+                    <svg class="arrow" viewBox="0 0 24 24"><path d="M7 14l5-5 5 5z" /></svg>
+                  {:else}
+                    <svg class="arrow" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z" /></svg>
+                  {/if}
+                </button>
+                <button
+                  class="delete-button"
+                  onclick={(e) => { e.stopPropagation(); showDeleteConfirmation = { profile }; }}
+                  aria-label="Delete profile"
+                >
+                  <svg viewBox="0 0 24 24">
+                    <path
+                      d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {#if expandedProfiles.has(profile.name)}
+              <div class="password-list" transition:slide>
+                {#each profile.passwords
+                  .filter(
+                    p =>
+                      p.account.toLowerCase().includes(search.toLowerCase()) ||
+                      p.username.toLowerCase().includes(search.toLowerCase())
+                  )
+                  .sort((a, b) => {
+                    const order = sortAsc ? 1 : -1;
+                    const aVal = a[sortKey];
+                    const bVal = b[sortKey];
+                    if (typeof aVal === 'string' && typeof bVal === 'string')
+                      return (aVal as string).localeCompare(bVal as string) * order;
+                    if (typeof aVal === 'number' && typeof bVal === 'number')
+                      return (aVal > bVal ? 1 : -1) * order;
+                    return 0;
+                  }) as password}
+                  <div class="password-item">
+                    <img
+                      src={password.icon}
+                      alt={password.account}
+                      onerror={(e) => (e.target as HTMLImageElement).src = '/icons/default.svg'}
+                    />
+                    <div class="password-details">
+                      <div class="account">{password.account}</div>
+                      <div class="username">{password.username}</div>
+                    </div>
+                    <div class="password-age">
+                      {#if password.lastChangeDays < 30}
+                        {password.lastChangeDays} days ago
+                      {:else if password.lastChangeDays < 365}
+                        {Math.floor(password.lastChangeDays / 30)} months ago
+                      {:else}
+                        {Math.floor(password.lastChangeDays / 365)} years ago
+                      {/if}
+                    </div>
+                    <!-- MANAGE BUTTON -->
+                    <a
+                      href={password.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="manage-btn"
+                      aria-label={`Manage ${password.account}`}
+                    >
+                      <img src="/icons/arrow.svg" alt="" />
+                    </a>
+                  </div>
+                {/each}
+              </div>
+            {/if}
+          </div>
         {/each}
-      </tbody>
-    </table>
-  </div>
+      </div>
+    {:else if selectedBrowser}
+      <p class="status-message">No profiles found for this browser.</p>
+    {/if}
+  {/if}
+
+  <!-- DELETE CONFIRMATION MODAL -->
+  {#if showDeleteConfirmation.profile}
+    <div class="confirmation-modal">
+      <div class="modal-content">
+        <h3>Confirm Delete</h3>
+        <p>
+          Are you sure you want to delete profile "{showDeleteConfirmation.profile.name}" and
+          all its passwords?
+        </p>
+        <div class="modal-actions">
+          <button onclick={() => showDeleteConfirmation = { profile: null }}>Cancel</button>
+          <button class="confirm" onclick={() => {
+            if (selectedBrowserName && showDeleteConfirmation.profile) {
+              deleteProfileBackend(selectedBrowserName, showDeleteConfirmation.profile.name);
+              deleteProfile(showDeleteConfirmation.profile);
+              showDeleteConfirmation = { profile: null };
+            }
+          }}>Delete</button>
+        </div>
+      </div>
+    </div>
+  {/if}
 </div>
 
 <style>
   /* ================  GLOBAL  ================ */
   @font-face {
-    font-family: 'Lexend';
-    src: url('/fonts/Lexend.ttf') format('truetype');
+    font-family: "Lexend";
+    src: url("/fonts/Lexend.ttf") format("truetype");
     font-weight: 400;
     font-style: normal;
   }
@@ -296,7 +422,7 @@
     height: 90vh;
     overflow: hidden;
     background: var(--panel);
-    font-family: 'Lexend', sans-serif;
+    font-family: "Lexend", sans-serif;
   }
 
   /* ================  TOOLBAR  ================ */
@@ -336,7 +462,7 @@
     color: var(--text);
     font-size: 1.1rem;
     box-sizing: border-box;
-    font-family: 'Lexend', sans-serif;
+    font-family: "Lexend", sans-serif;
   }
 
   input::placeholder {
@@ -364,6 +490,11 @@
     transform: scale(1.05);
   }
 
+  .selected-browser img {
+    width: 2rem
+  }
+
+
   .popup {
     position: absolute;
     top: calc(100% + 0.5rem);
@@ -378,23 +509,30 @@
     gap: 0.5rem;
   }
 
-  .popup img {
+  .popup .browser-icon-button {
     width: 40px;
     height: 40px;
     border-radius: 50%;
     padding: 4px;
     background: var(--panel);
-    transition: transform 0.2s ease, background 0.2s ease;
+    transition:
+    transform 0.2s ease,
+    background 0.2s ease;
     cursor: pointer;
+    border: none;
+  }
+
+  .popup .browser-icon-button img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
   }
 
   .popup img:hover {
     transform: scale(1.1);
     background: var(--hover);
   }
-  .popup img.selected {
-    border: 2px solid var(--text);
-  }
+  
 
   /* ================  PROFILE LIST  ================ */
   .profile-list {
@@ -539,8 +677,10 @@
     display: flex;
     gap: 0.75rem;
     align-items: center;
-    font-family: 'Lexend', sans-serif;
-    transition: background 0.2s ease, transform 0.2s ease;
+    font-family: "Lexend", sans-serif;
+    transition:
+      background 0.2s ease,
+      transform 0.2s ease;
   }
 
   .sort-button:hover {
@@ -562,7 +702,7 @@
     border-radius: 20px;
     z-index: 100;
     min-width: 9rem;
-    font-family: 'Lexend', sans-serif;
+    font-family: "Lexend", sans-serif;
   }
 
   .sort-option {

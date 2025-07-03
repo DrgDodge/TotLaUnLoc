@@ -4,6 +4,7 @@
   import zxcvbn from 'zxcvbn';
   import Chart from 'chart.js/auto';
   import { getCurrentWindow } from '@tauri-apps/api/window';
+  
 
   import breaches from "../../breaches.json"
 
@@ -53,8 +54,8 @@
 
   let filtered = $derived(
     entries
-      .filter(e => e.account.toLowerCase().includes(search.toLowerCase()))
-      .sort((a, b) => {
+      .filter((e: Entry) => e.account.toLowerCase().includes(search.toLowerCase()))
+      .sort((a: Entry, b: Entry) => {
         const aVal = a[sortKey];
         const bVal = b[sortKey];
         const order = sortAsc ? 1 : -1;
@@ -71,7 +72,7 @@
     weakPasswords: entries.filter(e => e.passwordStrength === 'weak').length,
   });
 
-  let ageDistribution = $derived(() => {
+  let ageDistribution = $derived.by(() => {
     const buckets = { '<1 month': 0, '1-6 months': 0, '6-12 months': 0, '>1 year': 0 };
     entries.forEach(e => {
       if (e.lastChangeDays < 30) buckets['<1 month']++;

@@ -1,13 +1,10 @@
 <script lang="ts">
-  import { writable, derived } from 'svelte/store';
-  import { onMount } from 'svelte';
-  import { load } from '@tauri-apps/plugin-store';
-import * as OTPAuth from 'otpauth';
-    import { fade, slide } from 'svelte/transition';
-      import { invoke } from '@tauri-apps/api/core';
-      import { Buffer } from 'buffer';
-(globalThis as any).Buffer = Buffer;
-
+  import { onMount } from "svelte";
+  import { load } from "@tauri-apps/plugin-store";
+  import * as OTPAuth from "otpauth";
+  import { fade, slide } from "svelte/transition";
+  import { invoke } from "@tauri-apps/api/core";
+  import { Buffer } from "buffer";
 
   interface Entry {
     id: number;
@@ -29,126 +26,130 @@ import * as OTPAuth from 'otpauth';
 
   let store: Awaited<ReturnType<typeof load>>;
 
-  const entries = writable<Entry[]>([]);
-  const search = writable('');
-  let remaining = 30;
-  let showInput = false;
-  let otpauthInput = '';
+  let entries = $state<Entry[]>([]);
+  let search = $state("");
+  let remaining = $state(30);
+  let showInput = $state(false);
+  let otpauthInput = $state("");
 
-  const filtered = derived(
-    [entries, search],
-    ([$entries, $search]) =>
-      $entries.filter(e =>
-        e.account.toLowerCase().includes($search.toLowerCase())
-      )
-  );
+  let filtered = $derived(entries.filter((e: Entry) =>
+    e.account.toLowerCase().includes(search.toLowerCase()),
+  ));
 
   function getDomain(account: string): string {
-    const normalized = account.toLowerCase().replace(/\s+/g, '');
+    const normalized = account.toLowerCase().replace(/\s+/g, "");
     try {
-      const url = normalized.startsWith('http') ? normalized : `https://${normalized}`;
+      const url = normalized.startsWith("http")
+        ? normalized
+        : `https://${normalized}`;
       const { hostname } = new URL(url);
-      return hostname.replace(/^www\./, '');
+      return hostname.replace(/^www\./, "");
     } catch (e) {
       return normalized;
     }
   }
 
-  function parseOtpauth(otpauth: string): { account: string; username: string; secret: string } {
-  try {
-    const match = otpauth.match(/^otpauth:\/\/totp\/([^?]+)\??(.*)$/i);
-    if (!match) throw new Error('Invalid otpauth URL');
+  function parseOtpauth(otpauth: string): {
+    account: string;
+    username: string;
+    secret: string;
+  } {
+    try {
+      const match = otpauth.match(/^otpauth:\/\/totp\/([^?]+)\??(.*)$/i);
+      if (!match) throw new Error("Invalid otpauth URL");
 
-    const label = decodeURIComponent(match[1]); // "issuer:user" or just "user"
-    const query = new URLSearchParams(match[2]);
-    const secret = query.get('secret') ?? '';
-    const issuer = query.get('issuer');
+      const label = decodeURIComponent(match[1]); // "issuer:user" or just "user"
+      const query = new URLSearchParams(match[2]);
+      const secret = query.get("secret") ?? "";
+      const issuer = query.get("issuer");
 
-    // If label includes "issuer:username", split it.
-    if (label.includes(':')) {
-      const [labelIssuer, username] = label.split(':');
-      return { account: issuer || labelIssuer, username, secret };
+      // If label includes "issuer:username", split it.
+      if (label.includes(":")) {
+        const [labelIssuer, username] = label.split(":");
+        return { account: issuer || labelIssuer, username, secret };
+      }
+
+      // Otherwise just treat label as username
+      return { account: issuer ?? label, username: label, secret };
+    } catch (e) {
+      console.error("Invalid otpauth:", otpauth, e);
+      return { account: "Invalid", username: "Invalid", secret: "" };
     }
-
-    // Otherwise just treat label as username
-    return { account: issuer ?? label, username: label, secret };
-  } catch (e) {
-    console.error('Invalid otpauth:', otpauth, e);
-    return { account: 'Invalid', username: 'Invalid', secret: '' };
   }
-}
 
-function cancelAdd() {
-  otpauthInput = '';
-  showInput = false;
-}
-
+  function cancelAdd() {
+    otpauthInput = "";
+    showInput = false;
+  }
 
   async function fetchCodes() {
     try {
-      const state = await store.get<StoreData>('totp_accounts') ?? { nextId: 0, accounts: [] };
+      const state = (await store.get<StoreData>("totp_accounts")) ?? {
+        nextId: 0,
+        accounts: [],
+      };
       const now = Math.floor(Date.now() / 1000);
       remaining = 30 - (now % 30);
 
       const updated = state.accounts.map(({ id, otpauth }) => {
         const { account, username, secret } = parseOtpauth(otpauth);
-const code = secret
-  ? new OTPAuth.TOTP({ secret }).generate()
-  : '------';
+        const code = secret
+          ? new OTPAuth.TOTP({ secret }).generate()
+          : "------";
 
         const domain = getDomain(account);
         const icon = `https://${domain}/favicon.ico`;
         return { id, icon, account, username, code };
       });
 
-      entries.set(updated);
+      entries = updated;
     } catch (error) {
-      console.error('Failed to load codes:', error);
+      console.error("Failed to load codes:", error);
     }
   }
 
   async function addAccount() {
-    if (!otpauthInput || !otpauthInput.startsWith('otpauth://')) {
-      alert('Invalid otpauth URL.');
+    if (!otpauthInput || !otpauthInput.startsWith("otpauth://")) {
+      alert("Invalid otpauth URL.");
       return;
     }
 
     try {
-      let state = await store.get<StoreData>('totp_accounts');
+      let state = await store.get<StoreData>("totp_accounts");
       if (!state) state = { nextId: 0, accounts: [] };
 
       const newId = state.nextId++;
       state.accounts.push({ id: newId, otpauth: otpauthInput });
 
-      await store.set('totp_accounts', state);
+      await store.set("totp_accounts", state);
       await store.save();
 
-      otpauthInput = '';
+      otpauthInput = "";
       showInput = false;
       await fetchCodes();
     } catch (error) {
-      alert('Failed to add account: ' + error);
+      alert("Failed to add account: " + error);
     }
   }
 
   async function deleteAccount(id: number) {
     try {
-      let state = await store.get<StoreData>('totp_accounts');
+      let state = await store.get<StoreData>("totp_accounts");
       if (!state) return;
 
-      state.accounts = state.accounts.filter(acc => acc.id !== id);
-      await store.set('totp_accounts', state);
+      state.accounts = state.accounts.filter((acc) => acc.id !== id);
+      await store.set("totp_accounts", state);
       await store.save();
 
       await fetchCodes();
     } catch (error) {
-      alert('Failed to delete account: ' + error);
+      alert("Failed to delete account: " + error);
     }
   }
 
   onMount(() => {
     (async () => {
-      store = await load('store.json', { autoSave: false });
+      store = await load("store.json", { autoSave: false });
       await fetchCodes();
 
       const interval = setInterval(() => {
@@ -168,11 +169,7 @@ const code = secret
   <div class="toolbar">
     <div class="search-wrapper">
       <img class="search-icon" src="/icons/search.svg" alt="" />
-      <input
-        type="text"
-        placeholder="Search"
-        bind:value={search}
-      />
+      <input type="text" placeholder="Search" bind:value={search} />
     </div>
     {#if showInput}
       <div class="input-wrapper" transition:slide={{ duration: 300 }}>
@@ -180,7 +177,7 @@ const code = secret
           type="text"
           placeholder="Enter otpauth URL (e.g., otpauth://totp/user?secret=XXX&issuer=Service)"
           bind:value={otpauthInput}
-          onkeydown={(e) => e.key === 'Enter' && addAccount()}
+          onkeydown={(e) => e.key === "Enter" && addAccount()}
         />
         <button class="submit-btn" onclick={addAccount}>
           <img src="/icons/check.svg" alt="Submit" />
@@ -196,9 +193,24 @@ const code = secret
     {/if}
     <div class="countdown-wrapper">
       <svg width="40" height="40" viewBox="0 0 40 40">
-        <circle cx="20" cy="20" r="16" stroke="var(--muted)" stroke-width="4" fill="none" />
-        <circle cx="20" cy="20" r="16" stroke="var(--text)" stroke-width="4" fill="none"
-          stroke-dasharray="100.53" stroke-dashoffset={ (30 - remaining) / 30 * 100.53 } />
+        <circle
+          cx="20"
+          cy="20"
+          r="16"
+          stroke="var(--muted)"
+          stroke-width="4"
+          fill="none"
+        />
+        <circle
+          cx="20"
+          cy="20"
+          r="16"
+          stroke="var(--text)"
+          stroke-width="4"
+          fill="none"
+          stroke-dasharray="100.53"
+          stroke-dashoffset={((30 - remaining) / 30) * 100.53}
+        />
       </svg>
     </div>
   </div>
@@ -216,13 +228,22 @@ const code = secret
         {#each filtered as e}
           <tr>
             <td class="account-cell">
-              <img src={e.icon} alt={e.account} onerror={(e) => (e.target as HTMLImageElement).src = '/icons/default.svg'} />
+              <img
+                src={e.icon}
+                alt={e.account}
+                onerror={(e) =>
+                  ((e.target as HTMLImageElement).src = "/icons/default.svg")}
+              />
               {e.account}
             </td>
             <td>{e.username}</td>
-            <td class="code">{e.code.slice(0,3)} {e.code.slice(3)}</td>
+            <td class="code">{e.code.slice(0, 3)} {e.code.slice(3)}</td>
             <td>
-              <button class="delete-btn" onclick={() => deleteAccount(e.id)} aria-label="Delete account for {e.account}">
+              <button
+                class="delete-btn"
+                onclick={() => deleteAccount(e.id)}
+                aria-label="Delete account for {e.account}"
+              >
                 <img class="delete-icon" src="/icons/trash.svg" alt="Delete" />
               </button>
             </td>
@@ -235,10 +256,10 @@ const code = secret
 
 <style>
   :global(:root) {
-    --panel:  #141414;
-    --text:   #e0e0e0;
-    --muted:  #777;
-    --hover:  #272727;
+    --panel: #141414;
+    --text: #e0e0e0;
+    --muted: #777;
+    --hover: #272727;
     --border: #444;
   }
 
@@ -307,7 +328,8 @@ const code = secret
     font-size: 1.1rem;
   }
 
-  .submit-btn, .cancel-btn {
+  .submit-btn,
+  .cancel-btn {
     background: var(--panel);
     border: 1px solid var(--border);
     border-radius: 50%;
@@ -321,11 +343,13 @@ const code = secret
     transition: background 0.2s;
   }
 
-  .submit-btn:hover, .cancel-btn:hover {
+  .submit-btn:hover,
+  .cancel-btn:hover {
     background: var(--hover);
   }
 
-  .submit-btn img, .cancel-btn img {
+  .submit-btn img,
+  .cancel-btn img {
     width: 24px;
     height: 24px;
     filter: brightness(0) invert(1);
@@ -389,10 +413,18 @@ const code = secret
     color: var(--text);
   }
 
-  th:nth-child(1) { width: 35%; }
-  th:nth-child(2) { width: 25%; }
-  th:nth-child(3) { width: 25%; }
-  th:nth-child(4) { width: 15%; }
+  th:nth-child(1) {
+    width: 35%;
+  }
+  th:nth-child(2) {
+    width: 25%;
+  }
+  th:nth-child(3) {
+    width: 25%;
+  }
+  th:nth-child(4) {
+    width: 15%;
+  }
 
   tbody tr:hover {
     background: var(--hover);
