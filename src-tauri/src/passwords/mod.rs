@@ -10,6 +10,8 @@ pub mod utils;
 use types::{BrowserData, Browsers, Passwords, ProfileData};
 use utils::{webkit_to_unix_time};
 
+use tempfile::tempdir;
+
 #[tauri::command]
 pub fn passwords() -> String {
 
@@ -88,54 +90,58 @@ pub fn passwords() -> String {
     let mut profile_data: Vec<ProfileData> = Vec::new();
 
     for profile in profiles {
-        let profile_name = &json["profile"]["info_cache"][profile.as_str().unwrap()]["name"];
+      let profile_name = &json["profile"]["info_cache"][profile.as_str().unwrap()]["name"];
 
-        let login_data;
+      let login_data;
 
-        if browser.name == "Opera GX" {
-            login_data = Path::new(&browser_path).join("Login Data");
-        } else {
-            login_data = Path::new(&browser_path)
-                .join(profile.as_str().unwrap())
-                .join("Login Data");
-        }
+      if browser.name == "Opera GX" {
+        login_data = Path::new(&browser_path).join("Login Data");
+      } else {
+        login_data = Path::new(&browser_path)
+          .join(profile.as_str().unwrap())
+          .join("Login Data");
+      }
 
-        let conn = Connection::open(login_data).expect("db error");
+      let tmpdir = tempdir();
+      let tmpdir_expect = tmpdir.expect("cannot create tmp dir");
+      let tmp_login_data = tmpdir_expect.path().join("login_data");
+      let _ = fs::copy(login_data, &tmp_login_data);
 
-        let mut logins = conn.prepare("SELECT signon_realm, username_value, date_created, date_password_modified FROM 'logins'").expect("sqlite error"); //err app crash browser open
+      let conn = Connection::open(tmp_login_data).expect("db error");
 
-        let mut rows = logins.query([]).unwrap();
+      let mut logins = conn.prepare("SELECT signon_realm, username_value, date_created, date_password_modified FROM 'logins'").expect("sqlite error"); //err app crash browser open
+      let mut rows = logins.query([]).unwrap();
+      
+      let mut passwords_data: Vec<Passwords> = Vec::new();
 
-        let mut passwords_data: Vec<Passwords> = Vec::new();
+      while let Some(row) = rows.next().unwrap() {
+        let url: String = row.get(0).unwrap();
+        let username: String = row.get(1).unwrap();
+        let date_created: i64 = row.get(2).unwrap();
+        let date_password_modified: i64 = row.get(3).unwrap();
 
-        while let Some(row) = rows.next().unwrap() {
-            let url: String = row.get(0).unwrap();
-            let username: String = row.get(1).unwrap();
-            let date_created: i64 = row.get(2).unwrap();
-            let date_password_modified: i64 = row.get(3).unwrap();
+        let date_created_timestamp =
+          DateTime::from_timestamp(webkit_to_unix_time(date_created), 0).unwrap();
+        let date_password_modified_timestamp =
+          DateTime::from_timestamp(webkit_to_unix_time(date_password_modified), 0)
+            .unwrap();
 
-            let date_created_timestamp =
-                DateTime::from_timestamp(webkit_to_unix_time(date_created), 0).unwrap();
-            let date_password_modified_timestamp =
-                DateTime::from_timestamp(webkit_to_unix_time(date_password_modified), 0)
-                    .unwrap();
-
-            let data = Passwords {
-                url: url,
-                username: username,
-                date_created: date_created_timestamp,
-                date_modified: date_password_modified_timestamp,
-            };
-
-            passwords_data.push(data);
-        }
-
-        let profile = ProfileData {
-            profile_name: profile_name.to_string(),
-            passwords: passwords_data,
+        let data = Passwords {
+          url: url,
+          username: username,
+          date_created: date_created_timestamp,
+          date_modified: date_password_modified_timestamp,
         };
 
-        profile_data.push(profile);
+        passwords_data.push(data);
+      }
+
+      let profile = ProfileData {
+        profile_name: profile_name.to_string(),
+        passwords: passwords_data,
+      };
+
+      profile_data.push(profile);
     }
 
     let browser = BrowserData {
