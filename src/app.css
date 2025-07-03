@@ -1,1 +1,17 @@
 @import "tailwindcss";
+
+:root {
+  --panel: #141414;
+  --text: #e0e0e0;
+  --muted: #777;
+  --hover: #272727;
+  --border: #444;
+}
+
+.dark {
+  --panel: #141414;
+  --text: #e0e0e0;
+  --muted: #777;
+  --hover: #272727;
+  --border: #444;
+}

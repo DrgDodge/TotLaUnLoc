@@ -18,6 +18,7 @@
     "@tauri-apps/plugin-opener": "^2",
     "@tauri-apps/plugin-shell": "^2.2.1",
     "chart.js": "^4.4.9",
+    "mode-watcher": "^1.1.0",
     "tailwindcss": "^4.1.11",
     "zxcvbn": "^4.4.2"
   },
@@ -26,6 +27,8 @@
     "@sveltejs/kit": "^2.9.0",
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
     "@tauri-apps/cli": "^2.5.0",
+    "@types/node": "^24.0.10",
+    "@types/zxcvbn": "^4.4.5",
     "svelte": "^5.0.0",
     "svelte-check": "^4.0.0",
     "typescript": "~5.6.2",

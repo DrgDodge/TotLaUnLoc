@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { writable, derived } from 'svelte/store';
   import { onMount } from 'svelte';
   import { invoke } from '@tauri-apps/api/core';
   import { fade, slide } from 'svelte/transition';
@@ -24,18 +23,16 @@
     }
   }
 
-  const entries = writable<Entry[]>([]);
-  const search = writable('');
-  let remaining = 30;
-  let showInput = false;
-  let otpauthInput = '';
+  let entries = $state<Entry[]>([]);
+  let search = $state('');
+  let remaining = $state(30);
+  let showInput = $state(false);
+  let otpauthInput = $state('');
 
-  const filtered = derived(
-    [entries, search],
-    ([$entries, $search]) =>
-      $entries.filter(e =>
-        e.account.toLowerCase().includes($search.toLowerCase())
-      )
+  let filtered = $derived(
+    entries.filter(e =>
+      e.account.toLowerCase().includes(search.toLowerCase())
+    )
   );
 
   async function fetchCodes() {
@@ -46,7 +43,7 @@
         const icon = `https://${domain}/favicon.ico`;
         return { ...account, icon };
       });
-      entries.set(processedAccounts);
+      entries = processedAccounts;
       const now = Math.floor(Date.now() / 1000);
       remaining = 30 - (now % 30);
     } catch (error) {
@@ -101,7 +98,7 @@
       <input
         type="text"
         placeholder="Search"
-        bind:value={$search}
+        bind:value={search}
       />
     </div>
     {#if showInput}
@@ -110,17 +107,17 @@
           type="text"
           placeholder="Enter otpauth URL (e.g., otpauth://totp/user?secret=XXX&issuer=Service)"
           bind:value={otpauthInput}
-          on:keydown={(e) => e.key === 'Enter' && addAccount()}
+          onkeydown={(e) => e.key === 'Enter' && addAccount()}
         />
-        <button class="submit-btn" on:click={addAccount}>
+        <button class="submit-btn" onclick={addAccount}>
           <img src="/icons/check.svg" alt="Submit" />
         </button>
-        <button class="cancel-btn" on:click={cancelAdd}>
+        <button class="cancel-btn" onclick={cancelAdd}>
           <img src="/icons/x.svg" alt="Cancel" />
         </button>
       </div>
     {:else}
-      <button class="add-button" on:click={() => (showInput = true)}>
+      <button class="add-button" onclick={() => (showInput = true)}>
         <img src="/icons/add.svg" alt="Add Account" />
       </button>
     {/if}
@@ -143,16 +140,16 @@
         </tr>
       </thead>
       <tbody>
-        {#each $filtered as e}
+        {#each filtered as e}
           <tr>
             <td class="account-cell">
-              <img src={e.icon} alt={e.account} on:error={(e) => e.target.src = '/icons/default.svg'} />
+              <img src={e.icon} alt={e.account} onerror={(e) => (e.target as HTMLImageElement).src = '/icons/default.svg'} />
               {e.account}
             </td>
             <td>{e.username}</td>
             <td class="code">{e.code.slice(0,3)} {e.code.slice(3)}</td>
             <td>
-              <button class="delete-btn" on:click={() => deleteAccount(e.id)} aria-label="Delete account for {e.account}">
+              <button class="delete-btn" onclick={() => deleteAccount(e.id)} aria-label="Delete account for {e.account}">
                 <img class="delete-icon" src="/icons/trash.svg" alt="Delete" />
               </button>
             </td>
