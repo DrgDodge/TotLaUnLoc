@@ -99,6 +99,7 @@
       />
     </button>
     <nav class="nav-list">
+      <img src="/icons/Logoo.png" alt="Welcome icon" class="welcome-icon" />
       <a class="nav-item { $page.url.pathname === '/passwords' ? 'active' : '' }" href="/passwords">
         <img class="icon" src="/icons/key.svg" alt="Passwords icon" />
         <span>Passwords</span>
@@ -393,6 +394,21 @@
     height: 1.5rem;
     filter: invert(1);
   }
+.welcome-icon {
+  width: 1px;
+  height: auto;
+  transition: width 1s ease-in-out;
+  align-self: center;
+      filter: invert(1);
+      opacity: 0%;
+}
+
+.sidebar.collapsed .welcome-icon {
+  width: 80px;
+      filter: invert(1);
+            opacity: 100%;
+              transition: width 1s ease-in-out;
+}
 
   
   

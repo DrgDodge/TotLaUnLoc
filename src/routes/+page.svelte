@@ -1,17 +1,50 @@
-<script lang="ts">
-  
-</script>
-
-<div class="flex flex-col items-center justify-center h-full text-center">
-  <img
-    class="w-16 h-16 mb-4 brightness-100"
-    alt="Lock icon"
-    src="/icons/lock.png"
-  />
-  <h1 class="text-4xl mb-2">Welcome to TotLaUnLoc</h1>
-  <p class="text-xl mb-8">A really smart password manager and helper</p>
-  <a
-    class="text-neutral-200 p-3 rounded-md text-base font-semibold"
-    href="/passwords">Get Started</a
-  >
+<div class="welcome-container">
+  <img src="/icons/Logoo.png" alt="Welcome icon" class="welcome-icon" />
+  <h1>Welcome to TotLaUnLoc</h1>
+  <p>A really smart password manager and helper</p>
+  <a href="/passwords" class="get-started-btn">Get Started</a>
 </div>
+
+<style>
+  .welcome-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+  }
+
+  .welcome-icon {
+    width: 20rem;
+    height: 20rem;
+    margin-bottom: 1rem;
+    filter: brightness(0) invert(1);
+  }
+
+  h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  p {
+    font-size: 1.25rem;
+    margin-bottom: 2rem;
+  }
+
+  .get-started-btn {
+    background: #3a3a3a;
+    color: #e0e0e0;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: background 0.2s;
+  }
+
+  .get-started-btn:hover {
+    background: #4a4a4a;
+  }
+</style>
