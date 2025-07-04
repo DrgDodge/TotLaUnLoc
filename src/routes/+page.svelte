@@ -13,6 +13,7 @@
     justify-content: center;
     height: 100%;
     text-align: center;
+    margin: auto
   }
 
   .welcome-icon {

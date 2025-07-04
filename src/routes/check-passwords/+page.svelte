@@ -5,10 +5,7 @@
   import Chart from 'chart.js/auto';
   import { getCurrentWindow } from '@tauri-apps/api/window';
   
-
   import breaches from "../../breaches.json"
-
-  console.log(breaches)
 
   interface Entry {
     id: number;
