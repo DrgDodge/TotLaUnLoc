@@ -86,21 +86,8 @@
 
 <div class="app-container">
   <aside class="sidebar" class:collapsed={isSidebarCollapsed}>
-    <button
-      class="toggle-btn"
-      style={`left: ${isSidebarCollapsed ? '50px' : '240px'};`}
-      onclick={toggleSidebar}
-      aria-label="Toggle sidebar"
-    >
-      <img
-        class="arrow"
-        class:collapsed={isSidebarCollapsed}
-        src="https://api.iconify.design/mdi:chevron-left.svg"
-        alt="toggle sidebar"
-      />
-    </button>
     <nav class="nav-list">
-      <a class="nav-item" href="/"><img  src="/icons/Logoo.png" alt="Welcome icon" class="welcome-icon" /></a>
+      <a class="nav-item" class:no-click={!isSidebarCollapsed} href="/"><img  src="/icons/Logoo.png" alt="Welcome icon" class="welcome-icon" /></a>
       <a class="nav-item { page.url.pathname === '/passwords' ? 'active' : '' }" href="/passwords">
         <img class="icon" src="/icons/key.svg" alt="Passwords icon" />
         <span>Passwords</span>
@@ -117,6 +104,19 @@
     <button class="theme-btn" onclick={toggleTheme} aria-label="Change the theme of the app">
       <img class="theme-icon" src="/icons/theme.svg" alt="Change theme" />
       <span>Change Theme</span>
+    </button>
+    <button
+      class="toggle-btn"
+      style={`left: ${isSidebarCollapsed ? '50px' : '240px'};`}
+      onclick={toggleSidebar}
+      aria-label="Toggle sidebar"
+    >
+      <img
+        class="arrow"
+        class:collapsed={isSidebarCollapsed}
+        src="https://api.iconify.design/mdi:chevron-left.svg"
+        alt="toggle sidebar"
+      />
     </button>
   </aside>
   <main class="content">
@@ -168,7 +168,7 @@
     background: #191919;
     display: flex;
     flex-direction: column;
-    padding: 0.75rem;
+    padding: 0 0.75rem 0.75rem 0.75rem;
     transition: width 0.3s ease;
   }
 
@@ -206,10 +206,10 @@
   }
 
   .nav-list {
-    padding-top: 1.6rem;
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+    margin-top: 0;
   }
 
   .nav-item {
@@ -226,6 +226,10 @@
     cursor: pointer;
     transition: background 0.2s;
     text-decoration: none;
+  }
+
+  .nav-list .nav-item:first-child {
+    padding: 0 1rem 1rem 1rem;
   }
 
   .nav-item:hover {
@@ -394,6 +398,10 @@
       filter: invert(1);
             opacity: 100%;
               transition: width 1s ease-in-out;
+}
+
+.no-click {
+  pointer-events: none;
 }
 
   
