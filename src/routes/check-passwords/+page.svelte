@@ -354,12 +354,6 @@
     background: var(--panel);
     padding: 1rem;
   }
-  h1 {
-    color: var(--text);
-    font-size: 2rem;
-    font-weight: 700;
-    margin-bottom: 1.5rem;
-  }
   .stats-dashboard {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));

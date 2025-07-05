@@ -12,12 +12,21 @@
   let isMouseOver = $state(false);
   let isExpanded = $derived(isDragging || isMouseOver);
   let isSidebarCollapsed = $state(false);
+  let showSettings = $state(false);
+  let currentTheme = $state('dark');
+  let autoLockEnabled = $state(false);
+  let autoLockTime = $state(5);
+
+  function toggleTheme(theme: 'dark' | 'light') {
+    currentTheme = theme;
+    if (theme === 'light') {
+      window.document.body.classList.add("light-mode-filter");
+    } else {
+      window.document.body.classList.remove("light-mode-filter");
+    }
+  }
 
   const getRandomDelay = () => Math.random() * (800 - 200) + 200;
-
-  function toggleTheme() {
-    window.document.body.classList.toggle("dark-mode");
-  }
 
   function toggleSidebar() {
     isSidebarCollapsed = !isSidebarCollapsed;
@@ -101,9 +110,9 @@
         <span>Check Passwords</span>
       </a>
     </nav>
-    <button class="theme-btn" onclick={toggleTheme} aria-label="Change the theme of the app">
-      <img class="theme-icon" src="/icons/theme.svg" alt="Change theme" />
-      <span>Change Theme</span>
+    <button class="settings-btn" onclick={() => showSettings = true} aria-label="Open settings">
+      <img class="icon" src="/icons/gear.svg" alt="Settings" />
+      <span>Settings</span>
     </button>
     <button
       class="toggle-btn"
@@ -130,6 +139,35 @@
   </main>
 </div>
 
+{#if showSettings}
+  <div class="modal-backdrop" onclick={(e) => { if (e.target === e.currentTarget) showSettings = false; }} onkeydown={(e) => e.key === 'Escape' && (showSettings = false)} role="dialog" aria-modal="true" aria-labelledby="dialog-title" tabindex="-1">
+    <div class="modal-content" role="document">
+      <h2 id="dialog-title">Settings</h2>
+      
+      <div class="setting-item">
+        <label for="theme-switcher">Theme</label>
+        <div class="theme-switcher">
+          <button class:active={currentTheme === 'light'} onclick={() => toggleTheme('light')}>Light</button>
+          <button class:active={currentTheme === 'dark'} onclick={() => toggleTheme('dark')}>Dark</button>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <label for="auto-lock">Auto-lock after inactivity</label>
+        <div class="auto-lock-setting">
+          <input type="checkbox" id="auto-lock" bind:checked={autoLockEnabled} />
+          {#if autoLockEnabled}
+            <input type="number" min="1" bind:value={autoLockTime} />
+            <span>minutes</span>
+          {/if}
+        </div>
+      </div>
+
+      <button class="close-modal" onclick={() => showSettings = false}>Close</button>
+    </div>
+  </div>
+{/if}
+
 <style>
   @font-face {
     font-family: 'Lexend';
@@ -143,15 +181,15 @@
     font-family: Lexend, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
 
-  :global(body.dark-mode) {
+  :global(body.light-mode-filter) {
     filter: invert(1);
   }
 
-  :global(body.dark-mode img) {
+  :global(body.light-mode-filter img) {
     filter: invert(1);
   }
 
-  :global(body.dark-mode .last-change) {
+  :global(body.light-mode-filter .last-change) {
     filter: invert(1);
   }
 
@@ -248,7 +286,7 @@
   }
 
   .sidebar.collapsed .nav-item span,
-  .sidebar.collapsed .theme-btn span {
+  .sidebar.collapsed .settings-btn span {
     display: none;
   }
 
@@ -261,7 +299,7 @@
     margin: 0;
   }
 
-  .theme-btn {
+  .settings-btn {
     color: white;
     background: transparent;
     border: none;
@@ -277,16 +315,11 @@
     transition: background 0.2s;
     margin-top: auto;
     text-decoration: none;
+        font-family: 'Lexend', sans-serif;
   }
 
-  .theme-btn:hover {
+  .settings-btn:hover {
     background: #3a3a3a;
-  }
-
-  .theme-icon {
-    width: 1.5rem;
-    height: 1.5rem;
-    filter: brightness(0) invert(1);
   }
 
   .content {
@@ -327,8 +360,6 @@
   .content-wrapper {
     animation: fadeIn 0.3s ease-in;
   }
-
-  
 
   @keyframes fadeIn {
     from { opacity: 0; }
@@ -384,26 +415,149 @@
     height: 1.5rem;
     filter: invert(1);
   }
-.welcome-icon {
-  width: 1px;
-  height: auto;
-  transition: width 1s ease-in-out;
-  align-self: center;
-      filter: invert(1);
-      opacity: 0%;
-}
 
-.sidebar.collapsed .welcome-icon {
-  width: 80px;
-      filter: invert(1);
-            opacity: 100%;
-              transition: width 1s ease-in-out;
-}
+  .welcome-icon {
+    width: 1px;
+    height: auto;
+    transition: width 1s ease-in-out;
+    align-self: center;
+    filter: invert(1);
+    opacity: 0%;
+  }
 
-.no-click {
-  pointer-events: none;
-}
+  .sidebar.collapsed .welcome-icon {
+    width: 80px;
+    filter: invert(1);
+    opacity: 100%;
+    transition: width 1s ease-in-out;
+  }
 
-  
-  
+  .no-click {
+    pointer-events: none;
+  }
+
+  .modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+  }
+
+  .modal-content {
+    background: rgba(30, 30, 30, 0.85); /* Increased transparency for more prominent glass effect */
+    backdrop-filter: blur(20px); /* Increased blur for more prominent glass effect */
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(68, 68, 68, 0.6);
+    padding: 2rem;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    font-family: 'Lexend', sans-serif;
+  }
+
+  .modal-content h2 {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #e0e0e0;
+    font-family: 'Lexend', sans-serif;
+  }
+
+  .setting-item label {
+    font-weight: 500;
+    color: #e0e0e0;
+    font-family: 'Lexend', sans-serif;
+  }
+
+  .theme-switcher {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .theme-switcher button {
+    flex: 1;
+    padding: 0.75rem;
+    border: 1px solid #444;
+    border-radius: 8px;
+    background: rgba(68, 68, 68, 0.2);
+    color: #e0e0e0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Lexend', sans-serif;
+  }
+
+  .theme-switcher button:hover {
+    background: rgba(68, 68, 68, 0.4);
+  }
+
+  .theme-switcher button.active {
+    background: #4caf50;
+    border-color: #4caf50;
+    color: white;
+  }
+
+  .auto-lock-setting input[type="checkbox"] {
+    /* Hide default checkbox */
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 2px solid #4caf50;
+    border-radius: 4px;
+    background-color: rgba(68, 68, 68, 0.2);
+    cursor: pointer;
+    position: relative;
+    outline: none;
+    transition: all 0.2s ease;
+  }
+
+  .auto-lock-setting input[type="checkbox"]:checked {
+    background-color: #4caf50;
+    border-color: #4caf50;
+  }
+
+  .auto-lock-setting input[type="checkbox"]:checked::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 5px;
+    width: 6px;
+    height: 12px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+
+  .auto-lock-setting input[type="number"] {
+    width: 60px;
+    padding: 0.5rem;
+    border-radius: 6px;
+    border: 1px solid #444;
+    background: rgba(68, 68, 68, 0.2);
+    color: #e0e0e0;
+    font-family: 'Lexend', sans-serif;
+  }
+
+  .close-modal {
+    align-self: flex-end;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    background: #4caf50;
+    color: white;
+    cursor: pointer;
+    font-weight: 600;
+    font-family: 'Lexend', sans-serif;
+  }
 </style>
