@@ -86,32 +86,41 @@
   onMount(async () => {
     try {
       const jsonData: string = await invoke('passwords');
-      const raw: any[] = JSON.parse(jsonData);
+      const rawBrowsers: any[] = JSON.parse(jsonData);
       const now = Date.now();
-      const data: Entry[] = raw.map((p: any, idx: number) => {
-        const domain = getDomain(p.url);
-        const account = domain ? (websiteAccounts[domain] || domain) : 'Unknown';
-        const icon = domain ? `https://${domain}/favicon.ico` : '/icons/default.svg';
-        const modified = new Date(p.date_modified).getTime();
-        const diffDays = Math.floor((now - modified) / (1000 * 60 * 60 * 24));
-        const strength = p.password ? computePasswordStrength(p.password) : null;
-        return {
-          id: idx + 1,
-          icon,
-          account,
-          username: p.username,
-          url: p.url,
-          lastChangeDays: diffDays,
-          password: p.password,
-          passwordStrength: strength,
-          breachStatus: {
-            account: { status: 'pending', result: null },
-            domain: { status: 'pending', result: null },
-          },
-        };
+      let idCounter = 1;
+      const allPasswords: Entry[] = [];
+
+      rawBrowsers.forEach(browser => {
+        browser.profiles.forEach((profile: any) => {
+          profile.passwords.forEach((p: any) => {
+            const domain = getDomain(p.url);
+            const account = domain ? (websiteAccounts[domain] || domain) : 'Unknown';
+            const icon = domain ? `https://${domain}/favicon.ico` : '/icons/default.svg';
+            const modified = new Date(p.date_modified).getTime();
+            const diffDays = Math.floor((now - modified) / (1000 * 60 * 60 * 24));
+            const strength = p.password ? computePasswordStrength(p.password) : null;
+            
+            allPasswords.push({
+              id: idCounter++,
+              icon,
+              account,
+              username: p.username,
+              url: p.url,
+              lastChangeDays: diffDays,
+              password: p.password,
+              passwordStrength: strength,
+              breachStatus: {
+                account: { status: 'pending', result: null },
+                domain: { status: 'pending', result: null },
+              },
+            });
+          });
+        });
       });
-      entries = data;
-      status = data.length ? 'success' : 'empty';
+
+      entries = allPasswords;
+      status = entries.length ? 'success' : 'empty';
 
       chart = new Chart(canvas, {
         type: 'bar',
@@ -126,8 +135,27 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          scales: { y: { beginAtZero: true } },
-          plugins: { legend: { display: false } },
+          scales: { 
+            y: { 
+              beginAtZero: true, 
+              grid: { color: '#2a2a2a' },
+              ticks: { color: '#9e9e9e' }
+            }, 
+            x: { 
+              grid: { display: false },
+              ticks: { color: '#9e9e9e' }
+            } 
+          },
+          plugins: { 
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#2a2a2a',
+              titleColor: '#e0e0e0',
+              bodyColor: '#e0e0e0',
+              borderColor: '#444',
+              borderWidth: 1
+            }
+          },
         }
       });
     } catch (e) {
@@ -208,12 +236,35 @@
 </script>
 
 <div class="page-wrapper">
-  <h1>Password Health Check</h1>
   <div class="stats-dashboard">
-    <div class="stat-card"><span>Total Accounts</span><span>{stats.total}</span></div>
-    <div class="stat-card"><span>Accounts with Breaches</span><span>{stats.breachedAccounts}</span></div>
-    <div class="stat-card"><span>Accounts on Breached Domains</span><span>{stats.accountsOnBreachedDomains}</span></div>
-    <div class="stat-card"><span>Weak Passwords</span><span>{stats.weakPasswords}</span></div>
+    <div class="stat-card">
+      <img src="/icons/key.svg" alt="Total Accounts" />
+      <div>
+        <span>Total Accounts</span>
+        <span class="stat-value">{stats.total}</span>
+      </div>
+    </div>
+    <div class="stat-card weak">
+      <img src="/icons/shield.svg" alt="Weak Passwords" />
+      <div>
+        <span>Weak Passwords</span>
+        <span class="stat-value">{stats.weakPasswords}</span>
+      </div>
+    </div>
+    <div class="stat-card breached">
+      <img src="/icons/shield.svg" alt="Breached Accounts" />
+      <div>
+        <span>Breached Accounts</span>
+        <span class="stat-value">{stats.breachedAccounts}</span>
+      </div>
+    </div>
+    <div class="stat-card breached-domain">
+      <img src="/icons/shield.svg" alt="Accounts on Breached Domains" />
+      <div>
+        <span>On Breached Domains</span>
+        <span class="stat-value">{stats.accountsOnBreachedDomains}</span>
+      </div>
+    </div>
   </div>
   <div class="chart-container">
     <canvas bind:this={canvas}></canvas>
@@ -305,29 +356,41 @@
   }
   h1 {
     color: var(--text);
-    font-size: 1.8rem;
-    margin-bottom: 1rem;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
   }
   .stats-dashboard {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1rem;
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
   }
   .stat-card {
     background: var(--hover);
-    padding: 1rem;
-    border-radius: 8px;
-    flex: 1;
-    text-align: center;
+    padding: 1.5rem;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
   }
-  .stat-card span:first-child {
-    color: var(--muted);
-    display: block;
+  .stat-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--border);
   }
-  .stat-card span:last-child {
-    color: var(--text);
-    font-size: 1.5rem;
+  .stat-card img {
+    width: 2.5rem;
+    height: 2.5rem;
+    filter: invert(1);
   }
+  .stat-card.weak img { filter: invert(75%) sepia(62%) saturate(4239%) hue-rotate(359deg) brightness(102%) contrast(108%); }
+  .stat-card.breached img { filter: invert(29%) sepia(88%) saturate(4258%) hue-rotate(340deg) brightness(94%) contrast(93%); }
+  .stat-card.breached-domain img { filter: invert(68%) sepia(39%) saturate(588%) hue-rotate(359deg) brightness(101%) contrast(101%); }
+  .stat-card span { display: block; }
+  .stat-card span:first-child { color: var(--muted); font-size: 0.9rem; }
+  .stat-value { color: var(--text); font-size: 1.75rem; font-weight: 700; }
   .chart-container {
     background: var(--hover);
     padding: 1rem;
@@ -342,49 +405,52 @@
   }
   .toolbar {
     padding: 1rem 0;
-    background: rgb(13, 13, 13);
-    flex: none;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 1rem;
   }
   .search-wrapper {
-    flex: 1;
+    flex: 1 1 300px;
+    min-width: 250px;
     position: relative;
-    min-width: 200px;
   }
   .search-icon {
     position: absolute;
     left: 1rem;
     top: 50%;
-    width: 1.75rem;
-    height: 1.75rem;
+    width: 1.5rem;
+    height: 1.5rem;
     transform: translateY(-50%);
-    fill: var(--muted);
-    pointer-events: none;
-    filter: invert(1);
+    filter: invert(0.5);
   }
   input {
-    width: 100%;
-    padding: 0.75rem 1rem 0.75rem 3rem;
-    border: none;
+    width: 92%;
+    padding: 0.75rem 1rem 0.75rem 3.5rem;
+    border: 1px solid var(--border);
     border-radius: 8px;
-    background: var(--panel);
+    background: var(--hover);
     color: var(--text);
-    font-size: 1.1rem;
-    box-sizing: border-box;
+    font-size: 1rem;
+    transition: all 0.2s ease;
   }
-  input::placeholder {
-    color: var(--muted);
+  input:focus {
+    outline: none;
+    border-color: #4caf50;
+    background: #1a1a1a;
   }
   button {
-    padding: 0.75rem 1rem;
+    flex-shrink: 0; /* Prevent the button from shrinking */
+    padding: 0.75rem 1.5rem;
     background: #4caf50;
     color: white;
     border: none;
     border-radius: 8px;
     cursor: pointer;
+    font-weight: 600;
+    transition: background 0.2s ease;
   }
+  button:hover { background: #45a049; }
   button:disabled {
     background: var(--muted);
     cursor: not-allowed;
@@ -392,41 +458,44 @@
   .table-wrapper {
     flex: 1;
     overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--hover);
   }
   .entries {
     width: 100%;
     border-collapse: collapse;
-    table-layout: fixed;
-  }
-  thead {
-    background: var(--panel);
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    border-bottom: 1px solid var(--border);
   }
   thead th {
-    padding: 1rem;
+    padding: 1rem 1.5rem;
     text-align: left;
-    font-weight: 700;
-    font-size: 1.1rem;
-    color: var(--text);
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--muted);
     cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
-  th:nth-child(1), td:nth-child(1) { width: 25%; }
-  th:nth-child(2), td:nth-child(2) { width: 20%; }
-  th:nth-child(3), td:nth-child(3) { width: 20%; }
-  th:nth-child(4), td:nth-child(4) { width: 35%; }
-  tbody tr:hover { background: var(--hover); }
-  tbody td { padding: 0.75rem 1rem; vertical-align: middle; }
-  .account-cell { display: flex; align-items: center; gap: 0.75rem; }
-  .account-cell img { width: 1.75rem; height: 1.75rem; object-fit: contain; background: white; border-radius: 4px; }
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.2s ease;
+  }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #2a2a2a; }
+  tbody td {
+    padding: 1rem 1.5rem;
+    vertical-align: middle;
+    color: var(--text);
+  }
+  .account-cell { display: flex; align-items: center; gap: 1rem; }
+  .account-cell img { width: 2rem; height: 2rem; object-fit: contain; background: white; border-radius: 6px; }
   .last-change.recent { color: #4caf50; }
   .last-change.moderate { color: #ffeb3b; }
   .last-change.stale { color: #f44336; }
-  .security-status { display: flex; gap: 0.5rem; justify-content: center; }
-  .status-icon { cursor: pointer; }
-  .spinner { animation: spin 1s linear infinite; }
+  .security-status { display: flex; gap: 0.75rem; align-items: center; }
+  .status-icon { font-size: 1.25rem; cursor: pointer; }
+  .spinner { animation: spin 1s linear infinite; display: inline-block; }
   @keyframes spin { 100% { transform: rotate(360deg); } }
   .table-wrapper::-webkit-scrollbar { width: 8px; }
   .table-wrapper::-webkit-scrollbar-track { background: var(--panel); }
@@ -434,6 +503,4 @@
   .table-wrapper::-webkit-scrollbar-thumb:hover { background-color: var(--text); }
   .status-message { padding: 1rem; color: var(--muted); text-align: center; }
   .status-message.error { color: #f44336; }
-
-  
 </style>
