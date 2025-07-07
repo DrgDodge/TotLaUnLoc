@@ -11,7 +11,7 @@
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "tauri": "tauri"
   },
-  "license": "MIT",
+  "license": "GPL-3.0-only",
   "dependencies": {
     "@tauri-apps/api": "^2.5.0",
     "@tauri-apps/plugin-opener": "^2",
@@ -19,7 +19,6 @@
     "@tauri-apps/plugin-store": "^2.3.0",
     "buffer": "^6.0.3",
     "chart.js": "^4.4.9",
-    "mode-watcher": "^1.1.0",
     "otpauth": "^9.4.0",
     "otplib": "^12.0.1",
     "shell": "^0.12.0",
