@@ -13,7 +13,7 @@ interface Translations {
 const translations: Translations = {
   en: {
     "welcome_title": "Welcome to TotLaUnLoc!",
-    "welcome_subtitle": "The last password manager you will ever need.",
+    "welcome_subtitle": "The last account manager you will ever need.",
     "get_started": "Get Started",
     "select_language": "Select Language",
     "enter_license_key": "Enter License Key",
@@ -68,7 +68,7 @@ const translations: Translations = {
   },
   ro: {
     "welcome_title": "Bun venit la TotLaUnLoc!",
-    "welcome_subtitle": "Ultimul manager de parole de care veți avea nevoie vreodată.",
+    "welcome_subtitle": "Ultimul manager de conturi de care veți avea nevoie vreodată.",
     "get_started": "Începeți",
     "select_language": "Selectați limba",
     "enter_license_key": "Introduceți cheia de licență",

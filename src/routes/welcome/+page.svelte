@@ -35,7 +35,7 @@
     store = await load("settings.json");
     // Welcome message typewriter logic remains the same...
     const welcomeMessages = ["Welcome to TotLaUnLoc!", "Bun venit la TotLaUnLoc!"];
-    const subtitleMessages = ["The last password manager you will ever need.", "Ultimul manager de parole de care veți avea nevoie vreodată."];
+    const subtitleMessages = ["The last account manager you will ever need.", "Ultimul manager de conturi de care veți avea nevoie vreodată."];
     const buttonMessages = ["Get Started", "Începeți"];
     let currentMessageIndex = 0;
     let isDeleting = false;
