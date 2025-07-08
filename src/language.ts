@@ -65,6 +65,8 @@ const translations: Translations = {
     "no_breaches": "No breaches",
     "domain_breaches": "{count} domain breaches",
     "no_domain_breaches": "No domain breaches",
+    "activate": "Activate",
+    "license_key": "License Key",
   },
   ro: {
     "welcome_title": "Bun venit la TotLaUnLoc!",
@@ -120,6 +122,8 @@ const translations: Translations = {
     "no_breaches": "Fără breșe",
     "domain_breaches": "{count} breșe de domeniu",
     "no_domain_breaches": "Fără breșe de domeniu",
+    "activate": "Activați",
+    "license_key": "Cheie de licență",
   },
 };
 

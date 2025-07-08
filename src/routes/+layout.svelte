@@ -21,6 +21,16 @@
   let currentTheme = $state('dark');
   let autoLockEnabled = $state(false);
   let autoLockTime = $state(5);
+  let isPinging = $state(false);
+  let pingSuccess = $state(false);
+  let pingProgress = $state(0);
+  let activationAttempted = $state(false);
+
+  let servers = [
+    { name: "Main license server", url: "https://h.lseb.top", status: "pending" },
+    { name: "Secondary license server", url: "https://home.mimidev.top", status: "pending" },
+    { name: "Backup Server", url: "https://google.com", status: "pending" },
+  ];
 
   onMount(async () => {
     const store = await load("settings.json");
@@ -102,6 +112,41 @@
       window.removeEventListener('mouseup', handleMouseUp);
     };
     window.addEventListener('mouseup', handleMouseUp);
+  }
+
+  async function activateLicense() {
+    activationAttempted = true;
+    isPinging = true;
+    pingSuccess = false;
+    pingProgress = 0;
+    const store = await load("settings.json");
+    await store.set("licenseKey", $licenseKey);
+    await store.save();
+
+    const totalServers = servers.length;
+    let successfulPings = 0;
+
+    for (let i = 0; i < totalServers; i++) {
+        try {
+            await fetch(servers[i].url, { method: 'HEAD', mode: 'no-cors' });
+            servers[i].status = "success";
+            successfulPings++;
+        } catch (error) {
+            servers[i].status = "error";
+        } finally {
+            pingProgress = ((i + 1) / totalServers) * 100;
+            servers = [...servers];
+            if (i < totalServers -1) {
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+        }
+    }
+
+    if (successfulPings === totalServers) {
+        pingSuccess = true;
+    }
+
+    isPinging = false;
   }
 </script>
 
@@ -204,6 +249,19 @@
           </div>
         </div>
 
+        <div class="setting-item">
+          <label for="license-key">{$t('license_key')}</label>
+          <div class="license-key-wrapper">
+            <input type="text" id="license-key" placeholder={$t('enter_your_license_key')} bind:value={$licenseKey} />
+            <button class="activate-btn" onclick={activateLicense}>{$t('activate')}</button>
+          </div>
+          {#if activationAttempted}
+            <div class="server-ping-loader" class:success={pingSuccess}>
+              <div class="progress-bar" style="width: {pingProgress}%;"></div>
+            </div>
+          {/if}
+        </div>
+
         <!-- <div class="setting-item">
           <label for="auto-lock">{$t('auto_lock_after_inactivity')}</label>
           <div class="auto-lock-setting">
@@ -234,6 +292,11 @@
     margin: 0;
     height: 100%;
     font-family: Lexend, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    box-sizing: border-box;
+  }
+
+  :global(*, *::before, *::after) {
+    box-sizing: inherit;
   }
 
   :global(body.light-mode-filter) {
@@ -691,5 +754,51 @@
     cursor: pointer;
     font-weight: 600;
     font-family: 'Lexend', sans-serif;
+  }
+
+  .license-key-wrapper {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .license-key-wrapper input {
+    flex: 1;
+    padding: 0.75rem;
+    border-radius: 8px;
+    border: 1px solid #444;
+    background: rgba(68, 68, 68, 0.2);
+    color: #e0e0e0;
+    font-family: 'Lexend', sans-serif;
+  }
+
+  .activate-btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    background: #4caf50;
+    color: white;
+    cursor: pointer;
+    font-weight: 600;
+    font-family: 'Lexend', sans-serif;
+  }
+
+  .server-ping-loader {
+    width: 100%;
+    height: 4px;
+    background-color: #444;
+    margin-top: 0.5rem;
+    border-radius: 2px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background-color: #f44336;
+    transition: width 0.3s ease-in-out;
+  }
+
+  .server-ping-loader.success .progress-bar {
+    background-color: #4caf50;
   }
 </style>
