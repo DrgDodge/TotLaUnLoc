@@ -69,3 +69,20 @@ Aplicația este construită folosind un stack tehnologic modern, combinând un f
 *   **Criptare:** Toate datele sensibile sunt criptate local pentru a asigura confidențialitatea și securitatea maximă.
 *   **Verificare breșe de date:** Este important de menționat că aplicația **nu accesează și nu decriptează parolele stocate de browsere**. Funcționalitatea de verificare a breșelor de date se realizează prin compararea numelui site-ului și a contului/username-ului cu o bază de date locală de breșe cunoscute, asigurând astfel confidențialitatea parolelor dumneavoastră. Nicio parolă nu este trimisă către servere externe în timpul acestui proces.
 *   **TOTP:** Integrarea cu biblioteca `totp-rs` permite generarea și gestionarea codurilor de autentificare unică bazate pe timp.
+*   
+
+Full Changelog new_repo: https://github.com/DrgDodge/TotLaUnLoc/commits/main
+
+Full Changelog old_repo: https://github.com/DrgDodge/TotLaUnLoc-old/commits/main/
+*‼️ Attention, the old repo might contain profanity in the commit titles‼️ *
+
+🪟 Windows only for now!
+🍎🐧 MacOS and Linux in the near future
+
+Jurnal complet al modificărilor pentru noul repo: https://github.com/DrgDodge/TotLaUnLoc/commits/main
+
+Jurnal complet al modificărilor pentru vechiul repo: https://github.com/DrgDodge/TotLaUnLoc-old/commits/main/
+*‼️ Atenție: vechiul repo poate conține limbaj licențios în titlurile commit-urilor‼️ *
+
+🪟 Disponibil momentan doar pentru Windows!
+🍎🐧 Suport pentru MacOS și Linux în viitorul apropiat
