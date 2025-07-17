@@ -27,9 +27,8 @@
   let activationAttempted = $state(false);
 
   let servers = [
-    { name: "Main license server", url: "https://h.lseb.top", status: "pending" },
-    { name: "Secondary license server", url: "https://home.mimidev.top", status: "pending" },
-    { name: "Backup Server", url: "https://google.com", status: "pending" },
+    { name: "Main license server", url: "https://db.totlaunloc.top", status: "pending" },
+    { name: "Secondary license server", url: "https://api.totlaunloc.top", status: "pending" },
   ];
 
   onMount(async () => {
