@@ -2,12 +2,14 @@
   import { page } from "$app/state";
   import { beforeNavigate } from "$app/navigation";
   import { onMount } from "svelte";
-  import { getCurrentWindow } from '@tauri-apps/api/window';
+  import { getCurrentWindow } from "@tauri-apps/api/window";
   import { load } from "@tauri-apps/plugin-store";
-
   import Welcome from './welcome/+page.svelte';
+
   import { welcomeComplete, language, licenseKey } from '../stores';
   import { t, locale } from '../language';
+
+  import io from "socket.io-client";
 
   let { children } = $props();
 
@@ -31,19 +33,54 @@
     { name: "Secondary license server", url: "https://api.totlaunloc.top", status: "pending" },
   ];
 
-  import io from "socket.io-client";
-
-onMount(async () => {
-    const socket = io("https://api.totlaunloc.top");
+  onMount(async () => {
+    const socket = io("https://api.totlaunloc.top", {
+      transports: ["websocket"],
+      withCredentials: true,
+    });
 
     socket.on("connect", () => {
-        console.log("Connected to server");
+      console.log("✅ Socket.IO connected");
+      console.log("Socket ID:", socket.id);
+    });
+
+    socket.on("connect_error", (err) => {
+      console.error("❌ Connection error:", err);
+    });
+
+    socket.on("disconnect", (reason) => {
+      console.warn("⚠️ Socket disconnected:", reason);
+    });
+
+    socket.on("reconnect", (attemptNumber) => {
+      console.log(`🔁 Reconnected after ${attemptNumber} attempts`);
+    });
+
+    socket.on("reconnect_attempt", (attemptNumber) => {
+      console.log(`🔄 Reconnect attempt #${attemptNumber}`);
+    });
+
+    socket.on("reconnecting", (attemptNumber) => {
+      console.log(`⏳ Reconnecting... Attempt #${attemptNumber}`);
+    });
+
+    socket.on("reconnect_error", (error) => {
+      console.error("❌ Reconnect error:", error);
+    });
+
+    socket.on("reconnect_failed", () => {
+      console.error("❌ Reconnect failed");
+    });
+
+    socket.onAny((event, ...args) => {
+      console.log(`📩 Incoming event: "${event}"`, args);
     });
 
     const heartbeat = setInterval(() => {
-        if (socket.connected) {
-            socket.emit("heartbeat");
-        }
+      if (socket.connected) {
+        console.log("💓 Sending heartbeat");
+        socket.emit("heartbeat");
+      }
     }, 5000);
 
     const store = await load("settings.json");
@@ -66,6 +103,12 @@ onMount(async () => {
     }
 
     isLoading = false;
+
+    return () => {
+      clearInterval(heartbeat);
+      socket.disconnect();
+      console.log("🛑 Socket.IO disconnected and cleaned up");
+    };
   });
 
   function toggleTheme(theme: 'dark' | 'light') {
@@ -140,28 +183,29 @@ onMount(async () => {
     let successfulPings = 0;
 
     for (let i = 0; i < totalServers; i++) {
-        try {
-            await fetch(servers[i].url, { method: 'HEAD', mode: 'no-cors' });
-            servers[i].status = "success";
-            successfulPings++;
-        } catch (error) {
-            servers[i].status = "error";
-        } finally {
-            pingProgress = ((i + 1) / totalServers) * 100;
-            servers = [...servers];
-            if (i < totalServers -1) {
-                await new Promise(resolve => setTimeout(resolve, 300));
-            }
+      try {
+        await fetch(servers[i].url, { method: 'HEAD', mode: 'no-cors' });
+        servers[i].status = "success";
+        successfulPings++;
+      } catch (error) {
+        servers[i].status = "error";
+      } finally {
+        pingProgress = ((i + 1) / totalServers) * 100;
+        servers = [...servers];
+        if (i < totalServers - 1) {
+          await new Promise(resolve => setTimeout(resolve, 300));
         }
+      }
     }
 
     if (successfulPings === totalServers) {
-        pingSuccess = true;
+      pingSuccess = true;
     }
 
     isPinging = false;
   }
 </script>
+
 
 {#if $welcomeComplete}
   <div
