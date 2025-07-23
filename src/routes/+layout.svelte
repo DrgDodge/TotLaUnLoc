@@ -31,7 +31,21 @@
     { name: "Secondary license server", url: "https://api.totlaunloc.top", status: "pending" },
   ];
 
-  onMount(async () => {
+  import io from "socket.io-client";
+
+onMount(async () => {
+    const socket = io("https://api.totlaunloc.top");
+
+    socket.on("connect", () => {
+        console.log("Connected to server");
+    });
+
+    const heartbeat = setInterval(() => {
+        if (socket.connected) {
+            socket.emit("heartbeat");
+        }
+    }, 5000);
+
     const store = await load("settings.json");
     const savedLanguage = await store.get("language");
     const savedLicenseKey = await store.get("licenseKey");
