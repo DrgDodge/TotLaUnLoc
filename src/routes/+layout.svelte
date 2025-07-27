@@ -27,7 +27,6 @@
   let activationAttempted = $state(false);
 
   let socket: ReturnType<typeof io> | null = null;
-  let heartbeat: ReturnType<typeof setInterval>;
 
   let servers = [
     { name: "Main license server", url: "https://db.totlaunloc.top", status: "pending" },
@@ -40,59 +39,12 @@
       withCredentials: true,
     });
 
-    socket.on("connect", () => {
-      console.log("✅ Socket.IO connected");
-      console.log("Socket ID:", socket?.id ?? "unavailable");
-    });
-
-
-    socket.on("connect_error", (err) => {
-      console.error("❌ Connection error:", err);
-    });
-
-    socket.on("disconnect", (reason) => {
-      console.warn("⚠️ Socket disconnected:", reason);
-    });
-
-    socket.on("reconnect", (attemptNumber) => {
-      console.log(`🔁 Reconnected after ${attemptNumber} attempts`);
-    });
-
-    socket.on("reconnect_attempt", (attemptNumber) => {
-      console.log(`🔄 Reconnect attempt #${attemptNumber}`);
-    });
-
-    socket.on("reconnecting", (attemptNumber) => {
-      console.log(`⏳ Reconnecting... Attempt #${attemptNumber}`);
-    });
-
-    socket.on("reconnect_error", (error) => {
-      console.error("❌ Reconnect error:", error);
-    });
-
-    socket.on("reconnect_failed", () => {
-      console.error("❌ Reconnect failed");
-    });
-
-    socket.onAny((event, ...args) => {
-      console.log(`📩 Incoming event: "${event}"`, args);
-    });
-
-    heartbeat = setInterval(async () => {
-      if (socket?.connected) {
-        const store = await load("settings.json");
-        const machineId = await store.get("machineId");
-        const apiKey = await store.get("licenseKey");
-        console.log("💓 Sending heartbeat with machineId: " + machineId + " and apiKey: " + savedLicenseKey);
-        socket.emit("heartbeat", { machineId, savedLicenseKey });
-      }
-    }, 5000);
-
     const store = await load("settings.json");
     const savedLanguage = await store.get("language");
     const savedTheme = await store.get("theme");
     const savedLicenseKey = await store.get("licenseKey");
     const savedWelcomeComplete = await store.get("welcomeComplete");
+    const machineId = await store.get("machineId");
 
     if (savedLanguage) language.set(savedLanguage as string);
     $: locale.set($language);
@@ -100,13 +52,25 @@
     if (savedLicenseKey) licenseKey.set(savedLicenseKey as string);
     if (savedWelcomeComplete) welcomeComplete.set(savedWelcomeComplete as boolean);
 
+    function heartbeat() {
+      if (socket?.connected) {
+        console.log("Sending heartbeat with machineId: " + machineId + " and apiKey: " + savedLicenseKey);
+        socket.emit("heartbeat", { machineId, apiKey: savedLicenseKey });
+      }
+    }
+
+    socket.on("connect", () => {
+      console.log("Socket.IO connected");
+      console.log("Socket ID:", socket?.id ?? "unavailable");
+      heartbeat();
+    });
+
     isLoading = false;
   });
 
   onDestroy(() => {
-    if (heartbeat) clearInterval(heartbeat);
     if (socket) socket.disconnect();
-    console.log("🛑 Socket.IO disconnected and cleaned up");
+    console.log("Socket.IO disconnected and cleaned up");
   });
 
   async function toggleTheme(theme: 'dark' | 'light') {
@@ -320,17 +284,6 @@
             </div>
           {/if}
         </div>
-
-        <!-- <div class="setting-item">
-          <label for="auto-lock">{$t('auto_lock_after_inactivity')}</label>
-          <div class="auto-lock-setting">
-            <input type="checkbox" id="auto-lock" bind:checked={autoLockEnabled} />
-            {#if autoLockEnabled}
-              <input type="number" min="1" bind:value={autoLockTime} />
-              <span>{$t('minutes')}</span>
-            {/if}
-          </div>
-        </div> -->
 
         <button class="close-modal" onclick={() => showSettings = false}>{$t('close')}</button>
       </div>
