@@ -242,7 +242,7 @@
       </button>
       <button
         class="toggle-btn"
-        style={`left: ${isSidebarCollapsed ? '50px' : '240px'};`}
+        style={`left: ${isSidebarCollapsed ? '80px' : '240px'};`}
         onclick={toggleSidebar}
         aria-label="Toggle sidebar"
       >
@@ -458,14 +458,14 @@
   }
 
   .sidebar.collapsed {
-    width: 50px;
+    width: 80px;
   }
 
   .toggle-btn {
     position: absolute;
     left: 19.4rem;
     top: 50%;
-    transform: translate(0%, -50%);
+    transform: translate(-50%, -50%);
     transition: left 0.3s ease;
     width: 40px;
     height: 40px;
@@ -697,15 +697,16 @@
   }
 
   .modal-content {
-    background: rgba(30, 30, 30, 0.85); /* Increased transparency for more prominent glass effect */
-    backdrop-filter: blur(20px); /* Increased blur for more prominent glass effect */
+    background: rgba(30, 30, 30, 0.85);
+    backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(68, 68, 68, 0.6);
-    padding: 2rem;
+    padding: 3rem;
     border-radius: 12px;
     width: 90%;
     max-width: 500px;
     display: flex;
+    justify-content: center;
     flex-direction: column;
     gap: 1.5rem;
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
@@ -718,12 +719,17 @@
     font-weight: 700;
     color: #e0e0e0;
     font-family: 'Lexend', sans-serif;
+    display: flex;
+    justify-content: center;
   }
 
   .setting-item label {
+    display: flex;
+    justify-content: center;
     font-weight: 500;
     color: #e0e0e0;
     font-family: 'Lexend', sans-serif;
+    padding-bottom: 3%;
   }
 
   .theme-switcher {
@@ -796,7 +802,7 @@
   } */
 
   .close-modal {
-    align-self: flex-end;
+    align-self: flex;
     padding: 0.75rem 1.5rem;
     border: none;
     border-radius: 8px;
@@ -805,6 +811,7 @@
     cursor: pointer;
     font-weight: 600;
     font-family: 'Lexend', sans-serif;
+    transform: translate(0%, +50%);
   }
 
   .license-key-wrapper {
