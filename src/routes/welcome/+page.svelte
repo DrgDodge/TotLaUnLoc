@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { load } from "@tauri-apps/plugin-store";
-  import { welcomeComplete, language, licenseKey, randomId } from '../../stores';
+  import { welcomeComplete, language, licenseKey, machineId } from '../../stores';
   import { type Store } from "@tauri-apps/plugin-store";
   import { fade } from 'svelte/transition';
   import { t, locale } from '../../language';
@@ -18,14 +18,11 @@
   let selectLanguageInterval: NodeJS.Timeout | null = null;
   let serverCheckStarted = false;
 
-  // Server list with real addresses
   let servers = [
-    { name: "Main license server", url: "https://h.lseb.top", status: "pending" },
-    { name: "Secondary license server", url: "https://home.mimidev.top", status: "pending" },
-    { name: "Backup Server", url: "https://invalid-url-for-testing.xyz", status: "pending" },
+    { name: "Main license server", url: "https://db.totlaunloc.top", status: "pending" },
+    { name: "Secondary license server", url: "https://api.totlaunloc.top", status: "pending" },
   ];
 
-  // This reactive block will trigger the server check when step becomes 3
   $: if (step === 3 && !serverCheckStarted) {
     serverCheckStarted = true;
     pingServers();
@@ -33,7 +30,6 @@
 
   onMount(async () => {
     store = await load("settings.json");
-    // Welcome message typewriter logic remains the same...
     const welcomeMessages = ["Welcome to TotLaUnLoc!", "Bun venit la TotLaUnLoc!"];
     const subtitleMessages = ["The last account manager you will ever need.", "Ultimul manager de conturi de care veți avea nevoie vreodată."];
     const buttonMessages = ["Get Started", "Începeți"];
@@ -137,7 +133,7 @@
     nextStep();
   }
 
-    function generateRandomId(length: number): string {
+    function generatemachineId(length: number): string {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let result = '';
     for (let i = 0; i < length; i++) {
@@ -147,9 +143,9 @@
   }
 
   async function submitLicense() {
-    const id = generateRandomId(16);
-    randomId.set(id);
-    await store.set("randomId", id);
+    const id = generatemachineId(16);
+    machineId.set(id);
+    await store.set("machineId", id);
     licenseKey.set(key);
     await store.set("licenseKey", key);
     await store.set("welcomeComplete", true);
@@ -159,9 +155,9 @@
   }
 
   async function skipLicense() {
-    const id = generateRandomId(16);
-    randomId.set(id);
-    await store.set("randomId", id);
+    const id = generatemachineId(16);
+    machineId.set(id);
+    await store.set("machineId", id);
     await store.set("welcomeComplete", true);
     await store.save();
     welcomeComplete.set(true);
