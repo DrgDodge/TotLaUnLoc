@@ -5,7 +5,7 @@
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import { load } from "@tauri-apps/plugin-store";
   import Welcome from './welcome/+page.svelte';
-  import { welcomeComplete, language, licenseKey } from '../stores';
+  import { welcomeComplete, language, licenseKey, theme } from '../stores';
   import { t, locale } from '../language';
   import io from "socket.io-client";
 
@@ -87,6 +87,7 @@
 
     const store = await load("settings.json");
     const savedLanguage = await store.get("language");
+    const savedTheme = await store.get("theme");
     const savedLicenseKey = await store.get("licenseKey");
     const savedWelcomeComplete = await store.get("welcomeComplete");
 
@@ -105,13 +106,16 @@
     console.log("🛑 Socket.IO disconnected and cleaned up");
   });
 
-  function toggleTheme(theme: 'dark' | 'light') {
+  async function toggleTheme(theme: 'dark' | 'light') {
     currentTheme = theme;
     if (theme === 'light') {
       window.document.body.classList.add("light-mode-filter");
     } else {
       window.document.body.classList.remove("light-mode-filter");
     }
+    const store = await load("settings.json");
+    await store.set("theme", theme);
+    await store.save();
   }
 
   const getRandomDelay = () => Math.random() * (800 - 200) + 200;
