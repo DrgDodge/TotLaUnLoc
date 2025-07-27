@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { load } from "@tauri-apps/plugin-store";
-  import { welcomeComplete, language, licenseKey } from '../../stores';
+  import { welcomeComplete, language, licenseKey, randomId } from '../../stores';
   import { type Store } from "@tauri-apps/plugin-store";
   import { fade } from 'svelte/transition';
   import { t, locale } from '../../language';
@@ -137,7 +137,19 @@
     nextStep();
   }
 
+    function generateRandomId(length: number): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  }
+
   async function submitLicense() {
+    const id = generateRandomId(16);
+    randomId.set(id);
+    await store.set("randomId", id);
     licenseKey.set(key);
     await store.set("licenseKey", key);
     await store.set("welcomeComplete", true);
@@ -147,11 +159,14 @@
   }
 
   async function skipLicense() {
+    const id = generateRandomId(16);
+    randomId.set(id);
+    await store.set("randomId", id);
     await store.set("welcomeComplete", true);
     await store.save();
     welcomeComplete.set(true);
     window.location.reload();
-  }
+  }""
 </script>
 
 <div class="welcome-container">
@@ -288,23 +303,22 @@
     height: auto;
   }
 
-  /* Server Status Styles */
   .server-status-list {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem; /* Reduced gap */
+    gap: 0.75rem;
     align-items: stretch;
     width: 100%;
-    margin-bottom: 1rem; /* Space before the input box */
+    margin-bottom: 1rem;
   }
   .server-status-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.6rem 1rem; /* Slightly smaller padding */
+    padding: 0.6rem 1rem;
     background-color: #222;
     border-radius: 8px;
-    font-size: 1rem; /* Slightly smaller font */
+    font-size: 1rem;
   }
   .status-icon {
     width: 24px;
@@ -314,7 +328,6 @@
     justify-content: center;
   }
 
-  /* Loader Animation */
   .loader {
     border: 3px solid #f3f3f3;
     border-top: 3px solid #4caf50;

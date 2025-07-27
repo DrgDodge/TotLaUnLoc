@@ -1,14 +1,12 @@
 <script lang="ts">
   import { page } from "$app/state";
   import { beforeNavigate } from "$app/navigation";
-  import { onMount } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import { load } from "@tauri-apps/plugin-store";
   import Welcome from './welcome/+page.svelte';
-
   import { welcomeComplete, language, licenseKey } from '../stores';
   import { t, locale } from '../language';
-
   import io from "socket.io-client";
 
   let { children } = $props();
@@ -28,21 +26,25 @@
   let pingProgress = $state(0);
   let activationAttempted = $state(false);
 
+  let socket: ReturnType<typeof io> | null = null;
+  let heartbeat: ReturnType<typeof setInterval>;
+
   let servers = [
     { name: "Main license server", url: "https://db.totlaunloc.top", status: "pending" },
     { name: "Secondary license server", url: "https://api.totlaunloc.top", status: "pending" },
   ];
 
   onMount(async () => {
-    const socket = io("https://api.totlaunloc.top", {
+    socket = io("https://api.totlaunloc.top", {
       transports: ["websocket"],
       withCredentials: true,
     });
 
     socket.on("connect", () => {
       console.log("✅ Socket.IO connected");
-      console.log("Socket ID:", socket.id);
+      console.log("Socket ID:", socket?.id ?? "unavailable");
     });
+
 
     socket.on("connect_error", (err) => {
       console.error("❌ Connection error:", err);
@@ -76,8 +78,8 @@
       console.log(`📩 Incoming event: "${event}"`, args);
     });
 
-    const heartbeat = setInterval(() => {
-      if (socket.connected) {
+    heartbeat = setInterval(() => {
+      if (socket?.connected) {
         console.log("💓 Sending heartbeat");
         socket.emit("heartbeat");
       }
@@ -88,27 +90,19 @@
     const savedLicenseKey = await store.get("licenseKey");
     const savedWelcomeComplete = await store.get("welcomeComplete");
 
-    if (savedLanguage) {
-      language.set(savedLanguage as string);
-    }
-
+    if (savedLanguage) language.set(savedLanguage as string);
     $: locale.set($language);
 
-    if (savedLicenseKey) {
-      licenseKey.set(savedLicenseKey as string);
-    }
-
-    if (savedWelcomeComplete) {
-      welcomeComplete.set(savedWelcomeComplete as boolean);
-    }
+    if (savedLicenseKey) licenseKey.set(savedLicenseKey as string);
+    if (savedWelcomeComplete) welcomeComplete.set(savedWelcomeComplete as boolean);
 
     isLoading = false;
+  });
 
-    return () => {
-      clearInterval(heartbeat);
-      socket.disconnect();
-      console.log("🛑 Socket.IO disconnected and cleaned up");
-    };
+  onDestroy(() => {
+    if (heartbeat) clearInterval(heartbeat);
+    if (socket) socket.disconnect();
+    console.log("🛑 Socket.IO disconnected and cleaned up");
   });
 
   function toggleTheme(theme: 'dark' | 'light') {
