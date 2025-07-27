@@ -118,7 +118,7 @@
     await store.save();
   }
 
-  const getRandomDelay = () => Math.random() * (800 - 200) + 200;
+  const getRandomDelay = () => Math.random() * (1200 - 200) + 200;
 
   function toggleSidebar() {
     isSidebarCollapsed = !isSidebarCollapsed;
@@ -259,11 +259,12 @@
       </button>
     </aside>
     <main class="content">
+      <div class="content-wrapper" style:visibility={isLoading ? 'hidden' : 'visible'}>
+        {@render children?.()}
+      </div>
       {#if isLoading}
-        <div class="loading-bar"></div>
-      {:else}
-        <div class="content-wrapper">
-          {@render children?.()}
+        <div class="loading-overlay">
+          <div class="loading-bar"></div>
         </div>
       {/if}
     </main>
@@ -581,12 +582,25 @@
     position: relative;
   }
 
-  .loading-bar {
+  .loading-overlay {
     position: absolute;
-    top: 10;
+    top: 0;
     left: 0;
+    right: 0;
+    bottom: 0;
+    background: #0d0d0d;
+    display: flex;
+    justify-content: top;
+    align-items: top;
+    z-index: 9000;
+    padding-top: 1%;
+  }
+
+  .loading-bar {
+    position: relative;
     width: 100%;
-    height: 4px;
+    max-width: 4000px;
+    height: 6px;
     background: #4a4a4a;
     overflow: hidden;
   }
