@@ -78,10 +78,13 @@
       console.log(`📩 Incoming event: "${event}"`, args);
     });
 
-    heartbeat = setInterval(() => {
+    heartbeat = setInterval(async () => {
       if (socket?.connected) {
-        console.log("💓 Sending heartbeat");
-        socket.emit("heartbeat");
+        const store = await load("settings.json");
+        const machineId = await store.get("randomId");
+        const apiKey = await store.get("licenseKey");
+        console.log("💓 Sending heartbeat with machineId: " + machineId + " and apiKey: " + apiKey);
+        socket.emit("heartbeat", { machineId, apiKey });
       }
     }, 5000);
 
