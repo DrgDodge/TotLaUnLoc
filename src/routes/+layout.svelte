@@ -5,7 +5,7 @@
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import { load } from "@tauri-apps/plugin-store";
   import Welcome from './welcome/+page.svelte';
-  import { welcomeComplete, language, licenseKey, theme } from '../stores';
+  import { welcomeComplete, language, licenseKey, theme, machineId } from '../stores';
   import { t, locale } from '../language';
   import io from "socket.io-client";
 
@@ -81,10 +81,10 @@
     heartbeat = setInterval(async () => {
       if (socket?.connected) {
         const store = await load("settings.json");
-        const machineId = await store.get("randomId");
+        const machineId = await store.get("machineId");
         const apiKey = await store.get("licenseKey");
-        console.log("💓 Sending heartbeat with machineId: " + machineId + " and apiKey: " + apiKey);
-        socket.emit("heartbeat", { machineId, apiKey });
+        console.log("💓 Sending heartbeat with machineId: " + machineId + " and apiKey: " + savedLicenseKey);
+        socket.emit("heartbeat", { machineId, savedLicenseKey });
       }
     }, 5000);
 
