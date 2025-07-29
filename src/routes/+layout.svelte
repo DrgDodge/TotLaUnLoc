@@ -4,9 +4,15 @@
   import { onMount, onDestroy } from "svelte";
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import { load } from "@tauri-apps/plugin-store";
-  import Welcome from './welcome/+page.svelte';
-  import { welcomeComplete, language, licenseKey, theme, machineId } from '../stores';
-  import { t, locale } from '../language';
+  import Welcome from "./welcome/+page.svelte";
+  import {
+    welcomeComplete,
+    language,
+    licenseKey,
+    theme,
+    machineId,
+  } from "../stores";
+  import { t, locale } from "../language";
   import io from "socket.io-client";
 
   let { children } = $props();
@@ -18,7 +24,7 @@
   let isExpanded = $derived(isDragging || isMouseOver);
   let isSidebarCollapsed = $state(false);
   let showSettings = $state(false);
-  let currentTheme = $state('dark');
+  let currentTheme = $state("dark");
   let autoLockEnabled = $state(false);
   let autoLockTime = $state(5);
   let isPinging = $state(false);
@@ -27,10 +33,19 @@
   let activationAttempted = $state(false);
 
   let socket: ReturnType<typeof io> | null = null;
+  let heartbeat: ReturnType<typeof setInterval>;
 
   let servers = [
-    { name: "Main license server", url: "https://db.totlaunloc.top", status: "pending" },
-    { name: "Secondary license server", url: "https://api.totlaunloc.top", status: "pending" },
+    {
+      name: "Main license server",
+      url: "https://db.totlaunloc.top",
+      status: "pending",
+    },
+    {
+      name: "Secondary license server",
+      url: "https://api.totlaunloc.top",
+      status: "pending",
+    },
   ];
 
   onMount(async () => {
@@ -39,43 +54,51 @@
       withCredentials: true,
     });
 
+    socket.on("connect", () => {
+      console.log("Socket.IO connected");
+      console.log("Socket ID:", socket?.id ?? "unavailable");
+    });
+
+    heartbeat = setInterval(async () => {
+      if (socket?.connected) {
+        const store = await load("settings.json");
+        const machineId = await store.get("machineId");
+        const apiKey = await store.get("licenseKey");
+        console.log(
+          "Sending heartbeat with machineId: " +
+            machineId +
+            " and apiKey: " +
+            savedLicenseKey,
+        );
+        socket.emit("heartbeat", { machineId, savedLicenseKey });
+      }
+    }, 5000);
+
     const store = await load("settings.json");
     const savedLanguage = await store.get("language");
     const savedTheme = await store.get("theme");
     const savedLicenseKey = await store.get("licenseKey");
     const savedWelcomeComplete = await store.get("welcomeComplete");
-    const machineId = await store.get("machineId");
 
     if (savedLanguage) language.set(savedLanguage as string);
     $: locale.set($language);
 
     if (savedLicenseKey) licenseKey.set(savedLicenseKey as string);
-    if (savedWelcomeComplete) welcomeComplete.set(savedWelcomeComplete as boolean);
-
-    function heartbeat() {
-      if (socket?.connected) {
-        console.log("Sending heartbeat with machineId: " + machineId + " and apiKey: " + savedLicenseKey);
-        socket.emit("heartbeat", { machineId, apiKey: savedLicenseKey });
-      }
-    }
-
-    socket.on("connect", () => {
-      console.log("Socket.IO connected");
-      console.log("Socket ID:", socket?.id ?? "unavailable");
-      heartbeat();
-    });
+    if (savedWelcomeComplete)
+      welcomeComplete.set(savedWelcomeComplete as boolean);
 
     isLoading = false;
   });
 
   onDestroy(() => {
+    if (heartbeat) clearInterval(heartbeat);
     if (socket) socket.disconnect();
     console.log("Socket.IO disconnected and cleaned up");
   });
 
-  async function toggleTheme(theme: 'dark' | 'light') {
+  async function toggleTheme(theme: "dark" | "light") {
     currentTheme = theme;
-    if (theme === 'light') {
+    if (theme === "light") {
       window.document.body.classList.add("light-mode-filter");
     } else {
       window.document.body.classList.remove("light-mode-filter");
@@ -125,14 +148,14 @@
 
   function handleMouseDown(event: MouseEvent) {
     const target = event.target as HTMLElement;
-    if (target.closest('button')) return;
+    if (target.closest("button")) return;
     isDragging = true;
     startDrag();
     const handleMouseUp = () => {
       isDragging = false;
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener("mouseup", handleMouseUp);
     };
-    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener("mouseup", handleMouseUp);
   }
 
   async function activateLicense() {
@@ -149,7 +172,7 @@
 
     for (let i = 0; i < totalServers; i++) {
       try {
-        await fetch(servers[i].url, { method: 'HEAD', mode: 'no-cors' });
+        await fetch(servers[i].url, { method: "HEAD", mode: "no-cors" });
         servers[i].status = "success";
         successfulPings++;
       } catch (error) {
@@ -158,7 +181,7 @@
         pingProgress = ((i + 1) / totalServers) * 100;
         servers = [...servers];
         if (i < totalServers - 1) {
-          await new Promise(resolve => setTimeout(resolve, 300));
+          await new Promise((resolve) => setTimeout(resolve, 300));
         }
       }
     }
@@ -171,19 +194,21 @@
   }
 </script>
 
-
 {#if $welcomeComplete}
   <div
     class="titlebar"
     class:expanded={isExpanded}
-    onmouseenter={() => isMouseOver = true}
-    onmouseleave={() => isMouseOver = false}
+    onmouseenter={() => (isMouseOver = true)}
+    onmouseleave={() => (isMouseOver = false)}
     role="button"
     tabindex="0"
     onmousedown={handleMouseDown}
   >
     <button class="titlebar-button" id="titlebar-minimize" onclick={minimize}>
-      <img src="https://api.iconify.design/mdi:window-minimize.svg" alt="minimize" />
+      <img
+        src="https://api.iconify.design/mdi:window-minimize.svg"
+        alt="minimize"
+      />
     </button>
     <button class="titlebar-button" id="titlebar-close" onclick={close}>
       <img src="https://api.iconify.design/mdi:close.svg" alt="close" />
@@ -193,27 +218,54 @@
   <div class="app-container">
     <aside class="sidebar" class:collapsed={isSidebarCollapsed}>
       <nav class="nav-list">
-        <a class="nav-item" class:no-click={!isSidebarCollapsed} href="/"><img src="/icons/Logoo.png" alt="Welcome icon" class="welcome-icon" /></a>
-        <a class="nav-item { page.url.pathname === '/passwords' ? 'active' : '' }" href="/passwords">
+        <a class="nav-item" class:no-click={!isSidebarCollapsed} href="/"
+          ><img
+            src="/icons/Logoo.png"
+            alt="Welcome icon"
+            class="welcome-icon"
+          /></a
+        >
+        <a
+          class="nav-item {page.url.pathname === '/passwords' ? 'active' : ''}"
+          href="/passwords"
+        >
           <img class="icon" src="/icons/key.svg" alt="Passwords icon" />
-          <span>{$t('passwords')}</span>
+          <span>{$t("passwords")}</span>
         </a>
-        <a class="nav-item { page.url.pathname === '/one-time-codes' ? 'active' : '' }" href="/one-time-codes">
+        <a
+          class="nav-item {page.url.pathname === '/one-time-codes'
+            ? 'active'
+            : ''}"
+          href="/one-time-codes"
+        >
           <img class="icon" src="/icons/clock.svg" alt="One-Time Codes icon" />
-          <span>{$t('one_time_codes')}</span>
+          <span>{$t("one_time_codes")}</span>
         </a>
-        <a class="nav-item { page.url.pathname === '/check-passwords' ? 'active' : '' }" href="/check-passwords">
-          <img class="icon" src="/icons/shield.svg" alt="Check Passwords icon" />
-          <span>{$t('check_passwords')}</span>
+        <a
+          class="nav-item {page.url.pathname === '/check-passwords'
+            ? 'active'
+            : ''}"
+          href="/check-passwords"
+        >
+          <img
+            class="icon"
+            src="/icons/shield.svg"
+            alt="Check Passwords icon"
+          />
+          <span>{$t("check_passwords")}</span>
         </a>
       </nav>
-      <button class="settings-btn" onclick={() => showSettings = true} aria-label="Open settings">
-        <img class="icon" src="/icons/gear.svg" alt={$t('settings')} />
-        <span>{$t('settings')}</span>
+      <button
+        class="settings-btn"
+        onclick={() => (showSettings = true)}
+        aria-label="Open settings"
+      >
+        <img class="icon" src="/icons/gear.svg" alt={$t("settings")} />
+        <span>{$t("settings")}</span>
       </button>
       <button
         class="toggle-btn"
-        style={`left: ${isSidebarCollapsed ? '80px' : '240px'};`}
+        style={`left: ${isSidebarCollapsed ? "80px" : "240px"};`}
         onclick={toggleSidebar}
         aria-label="Toggle sidebar"
       >
@@ -226,7 +278,10 @@
       </button>
     </aside>
     <main class="content">
-      <div class="content-wrapper" style:visibility={isLoading ? 'hidden' : 'visible'}>
+      <div
+        class="content-wrapper"
+        style:visibility={isLoading ? "hidden" : "visible"}
+      >
         {@render children?.()}
       </div>
       {#if isLoading}
@@ -238,45 +293,76 @@
   </div>
 
   {#if showSettings}
-    <div class="modal-backdrop" onclick={(e) => { if (e.target === e.currentTarget) showSettings = false; }} onkeydown={(e) => e.key === 'Escape' && (showSettings = false)} role="dialog" aria-modal="true" aria-labelledby="dialog-title" tabindex="-1">
+    <div
+      class="modal-backdrop"
+      onclick={(e) => {
+        if (e.target === e.currentTarget) showSettings = false;
+      }}
+      onkeydown={(e) => e.key === "Escape" && (showSettings = false)}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="dialog-title"
+      tabindex="-1"
+    >
       <div class="modal-content" role="document">
-        <h2 id="dialog-title">{$t('settings')}</h2>
+        <h2 id="dialog-title">{$t("settings")}</h2>
 
         <div class="setting-item">
-          <label for="theme-switcher">{$t('theme')}</label>
+          <label for="theme-switcher">{$t("theme")}</label>
           <div class="theme-switcher">
-            <button class:active={currentTheme === 'light'} onclick={() => toggleTheme('light')}>{$t('light')}</button>
-            <button class:active={currentTheme === 'dark'} onclick={() => toggleTheme('dark')}>{$t('dark')}</button>
+            <button
+              class:active={currentTheme === "light"}
+              onclick={() => toggleTheme("light")}>{$t("light")}</button
+            >
+            <button
+              class:active={currentTheme === "dark"}
+              onclick={() => toggleTheme("dark")}>{$t("dark")}</button
+            >
           </div>
         </div>
 
         <div class="setting-item">
-          <label for="select_language">{$t('select_language')}</label>
-          <div class="language-select" aria-label="{$t('select_language')}">
+          <label for="select_language">{$t("select_language")}</label>
+          <div class="language-select" aria-label={$t("select_language")}>
             <button
-              class:active={$language === 'en'}
-              onclick={() => setLanguage('en')}
+              class:active={$language === "en"}
+              onclick={() => setLanguage("en")}
               aria-label="Select English"
             >
-              <img src="/icons/english_flag.svg" alt="English Flag" class="flag-icon" />
+              <img
+                src="/icons/english_flag.svg"
+                alt="English Flag"
+                class="flag-icon"
+              />
               English
             </button>
             <button
-              class:active={$language === 'ro'}
-              onclick={() => setLanguage('ro')}
+              class:active={$language === "ro"}
+              onclick={() => setLanguage("ro")}
               aria-label="Select Romanian"
             >
-              <img src="/icons/romanian_flag.svg" alt="Romanian Flag" class="flag-icon" />
+              <img
+                src="/icons/romanian_flag.svg"
+                alt="Romanian Flag"
+                class="flag-icon"
+              />
               Română
             </button>
           </div>
         </div>
 
         <div class="setting-item">
-          <label for="license-key">{$t('license_key')}</label>
+          <label for="license-key">{$t("license_key")}</label>
           <div class="license-key-wrapper">
-            <input type="text" id="license-key" placeholder={$t('enter_your_license_key')} bind:value={$licenseKey} />
-            <button class="activate-btn" onclick={activateLicense}>{$t('activate')}</button>
+            <input
+              type="text"
+              id="license-key"
+              placeholder={$t("enter_your_license_key")}
+              bind:value={$licenseKey}
+            />
+            <button class="activate-btn" onclick={activateLicense}
+              >{$t("activate")}</button
+            >
           </div>
           {#if activationAttempted}
             <div class="server-ping-loader" class:success={pingSuccess}>
@@ -285,7 +371,20 @@
           {/if}
         </div>
 
-        <button class="close-modal" onclick={() => showSettings = false}>{$t('close')}</button>
+        <!-- <div class="setting-item">
+          <label for="auto-lock">{$t('auto_lock_after_inactivity')}</label>
+          <div class="auto-lock-setting">
+            <input type="checkbox" id="auto-lock" bind:checked={autoLockEnabled} />
+            {#if autoLockEnabled}
+              <input type="number" min="1" bind:value={autoLockTime} />
+              <span>{$t('minutes')}</span>
+            {/if}
+          </div>
+        </div> -->
+
+        <button class="close-modal" onclick={() => (showSettings = false)}
+          >{$t("close")}</button
+        >
       </div>
     </div>
   {/if}
@@ -295,15 +394,23 @@
 
 <style>
   @font-face {
-    font-family: 'Lexend';
-    src: url('/fonts/Lexend.ttf') format('truetype');
+    font-family: "Lexend";
+    src: url("/fonts/Lexend.ttf") format("truetype");
   }
 
   :global(html, body) {
     user-select: none;
     margin: 0;
     height: 100%;
-    font-family: Lexend, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family:
+      Lexend,
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
+      Helvetica,
+      Arial,
+      sans-serif;
     box-sizing: border-box;
   }
 
@@ -355,10 +462,10 @@
     color: #1a1a1a;
   }
   :global(body.light-mode-filter .sort-dropdown .active) {
-    color: #e5e5e5
+    color: #e5e5e5;
   }
   :global(body.light-mode-filter .sort-dropdown .sort-option:hover) {
-    color: #e5e5e5
+    color: #e5e5e5;
   }
 
   .language-select {
@@ -381,7 +488,7 @@
     justify-content: center;
     gap: 0.5rem;
     transition: all 0.2s ease;
-    font-family: 'Lexend', sans-serif;
+    font-family: "Lexend", sans-serif;
   }
 
   .language-select button:hover {
@@ -523,7 +630,7 @@
     transition: background 0.2s;
     margin-top: auto;
     text-decoration: none;
-        font-family: 'Lexend', sans-serif;
+    font-family: "Lexend", sans-serif;
   }
 
   .settings-btn:hover {
@@ -573,9 +680,15 @@
   }
 
   @keyframes loading {
-    0% { transform: translateX(-100%); }
-    50% { transform: translateX(300%); }
-    100% { transform: translateX(300%); }
+    0% {
+      transform: translateX(-100%);
+    }
+    50% {
+      transform: translateX(300%);
+    }
+    100% {
+      transform: translateX(300%);
+    }
   }
 
   .content-wrapper {
@@ -583,13 +696,23 @@
   }
 
   @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   @keyframes fadeInElement {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   .titlebar {
@@ -611,7 +734,7 @@
   }
 
   .titlebar.expanded {
-    height: 2.0rem;
+    height: 2rem;
   }
 
   .titlebar-button {
@@ -684,7 +807,7 @@
     flex-direction: column;
     gap: 1.5rem;
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-    font-family: 'Lexend', sans-serif;
+    font-family: "Lexend", sans-serif;
   }
 
   .modal-content h2 {
@@ -692,7 +815,7 @@
     font-size: 1.8rem;
     font-weight: 700;
     color: #e0e0e0;
-    font-family: 'Lexend', sans-serif;
+    font-family: "Lexend", sans-serif;
     display: flex;
     justify-content: center;
   }
@@ -702,7 +825,7 @@
     justify-content: center;
     font-weight: 500;
     color: #e0e0e0;
-    font-family: 'Lexend', sans-serif;
+    font-family: "Lexend", sans-serif;
     padding-bottom: 3%;
   }
 
@@ -720,7 +843,7 @@
     color: #e0e0e0;
     cursor: pointer;
     transition: all 0.2s ease;
-    font-family: 'Lexend', sans-serif;
+    font-family: "Lexend", sans-serif;
   }
 
   .theme-switcher button:hover {
@@ -784,7 +907,7 @@
     color: white;
     cursor: pointer;
     font-weight: 600;
-    font-family: 'Lexend', sans-serif;
+    font-family: "Lexend", sans-serif;
     transform: translate(0%, +50%);
   }
 
@@ -800,7 +923,7 @@
     border: 1px solid #444;
     background: rgba(68, 68, 68, 0.2);
     color: #e0e0e0;
-    font-family: 'Lexend', sans-serif;
+    font-family: "Lexend", sans-serif;
   }
 
   .activate-btn {
@@ -811,7 +934,7 @@
     color: white;
     cursor: pointer;
     font-weight: 600;
-    font-family: 'Lexend', sans-serif;
+    font-family: "Lexend", sans-serif;
   }
 
   .server-ping-loader {
