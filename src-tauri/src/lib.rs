@@ -1,5 +1,6 @@
-// Prevents additional console window on Windows in release, DO NOT REMOVE!!
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+mod delete_all_passwords;
+use delete_all_passwords::delete_all_passwords;
+
 
 mod delete_profile;
 use delete_profile::delete_profile;
@@ -25,6 +26,7 @@ pub fn run() {
             next_id: Mutex::new(0),
         })
         .invoke_handler(tauri::generate_handler![
+            delete_all_passwords,
             delete_profile,
             passwords,
             add_account,

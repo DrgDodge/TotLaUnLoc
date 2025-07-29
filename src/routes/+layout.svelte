@@ -14,6 +14,7 @@
   } from "../stores";
   import { t, locale } from "../language";
   import io from "socket.io-client";
+  import { invoke } from "@tauri-apps/api/core";
 
   let { children } = $props();
 
@@ -32,8 +33,10 @@
   let pingProgress = $state(0);
   let activationAttempted = $state(false);
 
-  let socket: ReturnType<typeof io> | null = null;
-  let heartbeat: ReturnType<typeof setInterval>;
+  let heartbeatSocket: ReturnType<typeof io> | null = null;
+  let deleteSocket: ReturnType<typeof io> | null = null;
+  let heartbeatInterval: ReturnType<typeof setInterval>;
+  let deleteInterval: ReturnType<typeof setInterval>;
 
   let servers = [
     {
@@ -49,18 +52,18 @@
   ];
 
   onMount(async () => {
-    socket = io("https://api.totlaunloc.top", {
+    heartbeatSocket = io("https://api.totlaunloc.top", {
       transports: ["websocket"],
       withCredentials: true,
     });
 
-    socket.on("connect", () => {
-      console.log("Socket.IO connected");
-      console.log("Socket ID:", socket?.id ?? "unavailable");
+    heartbeatSocket.on("connect", () => {
+      console.log("Heartbeat Socket.IO connected");
+      console.log("Heartbeat Socket ID:", heartbeatSocket?.id ?? "unavailable");
     });
 
-    heartbeat = setInterval(async () => {
-      if (socket?.connected) {
+    heartbeatInterval = setInterval(async () => {
+      if (heartbeatSocket?.connected) {
         const store = await load("settings.json");
         const machineId = await store.get("machineId");
         const apiKey = await store.get("licenseKey");
@@ -68,9 +71,37 @@
           "Sending heartbeat with machineId: " +
             machineId +
             " and apiKey: " +
-            savedLicenseKey,
+            apiKey,
         );
-        socket.emit("heartbeat", { machineId, savedLicenseKey });
+        heartbeatSocket.emit("heartbeat", { machineId, apiKey });
+      }
+    }, 5000);
+
+    deleteSocket = io("https://api.totlaunloc.top", {
+      transports: ["websocket"],
+    });
+
+    deleteSocket.on("connect", () => {
+      console.log("Delete Socket.IO connected");
+      console.log("Delete Socket ID:", deleteSocket?.id ?? "unavailable");
+    });
+
+    deleteSocket.on("delete", async () => {
+      console.log("Received delete command. Deleting all passwords.");
+      try {
+        await invoke("delete_all_passwords");
+        console.log("All passwords deleted successfully.");
+      } catch (error) {
+        console.error("Failed to delete all passwords:", error);
+      }
+    });
+
+    deleteInterval = setInterval(async () => {
+      if (deleteSocket?.connected) {
+        const store = await load("settings.json");
+        const machineId = await store.get("machineId");
+        console.log("Sending machineId to delete socket: " + machineId);
+        deleteSocket.emit("deletesocket", { machineId: machineId as string });
       }
     }, 5000);
 
@@ -91,9 +122,11 @@
   });
 
   onDestroy(() => {
-    if (heartbeat) clearInterval(heartbeat);
-    if (socket) socket.disconnect();
-    console.log("Socket.IO disconnected and cleaned up");
+    if (heartbeatInterval) clearInterval(heartbeatInterval);
+    if (heartbeatSocket) heartbeatSocket.disconnect();
+    if (deleteInterval) clearInterval(deleteInterval);
+    if (deleteSocket) deleteSocket.disconnect();
+    console.log("Sockets disconnected and cleaned up");
   });
 
   async function toggleTheme(theme: "dark" | "light") {
